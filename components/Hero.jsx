@@ -75,7 +75,7 @@ const Hero = () => {
                         </div>
                         <Image className='w-35' src={assets.hero_product_img1} alt="" />
                     </div>
-                    <Link href=""  className='flex-1 flex items-center justify-between w-full bg-[#432DD7] rounded-3xl p-6 px-8 group cursor-pointer'>
+                    <Link href="/jobs"  className='flex-1 flex items-center justify-between w-full bg-[#432DD7] rounded-3xl p-6 px-8 group cursor-pointer'>
                         <div>
                             <p className='text-3xl font-medium text-white max-w-40'>Jobs</p>
                             <p className='flex items-center gap-1 mt-4 text-white'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
