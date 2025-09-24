@@ -1,14 +1,17 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { X, Eye, EyeOff } from 'lucide-react'
+import { signupWithCredentials, startGoogleOAuth } from '@/lib/auth'
 
 const SignupModal = ({ isOpen, onClose, onSwitchToLogin }) => {
     const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
+        phone: '',
+        name: '',
+        dob: '', // DD/MM/YYYY
         email: '',
         password: ''
     })
+    const [error, setError] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
 
@@ -39,18 +42,22 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }) => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
-        
-        // Simulate API call
-        setTimeout(() => {
+        setError('')
+        try {
+            // client-side validations and api call
+            const result = await signupWithCredentials(formData)
+            if (result?.success) {
+                onClose()
+            }
+        } catch (err) {
+            setError(err?.message || 'Signup failed. Please try again.')
+        } finally {
             setIsLoading(false)
-            console.log('Signup:', formData)
-            onClose()
-        }, 1500)
+        }
     }
 
     const handleGoogleSignup = () => {
-        console.log('Google signup clicked')
-        // Add Google OAuth logic here
+        startGoogleOAuth()
     }
 
     if (!isOpen) return null
@@ -105,34 +112,49 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                         </div>
                     </div>
 
-                    {/* Name Fields */}
+                    {/* Phone, Name, DOB */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                First name <span className="text-gray-400 font-normal">Optional</span>
+                                Phone number
                             </label>
                             <input
-                                type="text"
-                                name="firstName"
-                                value={formData.firstName}
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
                                 onChange={handleChange}
-                                placeholder="First name"
+                                placeholder="e.g. +233 555 000 111"
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]/20 focus:border-[#5C3AEB] transition-colors"
+                                required
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Last name <span className="text-gray-400 font-normal">Optional</span>
+                                Full name
                             </label>
                             <input
                                 type="text"
-                                name="lastName"
-                                value={formData.lastName}
+                                name="name"
+                                value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Last name"
+                                placeholder="Your full name"
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]/20 focus:border-[#5C3AEB] transition-colors"
+                                required
                             />
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                        <input
+                            type="text"
+                            name="dob"
+                            value={formData.dob}
+                            onChange={handleChange}
+                            placeholder="DD/MM/YYYY"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]/20 focus:border-[#5C3AEB] transition-colors"
+                            required
+                        />
                     </div>
 
                     {/* Email Input */}
@@ -175,6 +197,10 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin }) => {
                             </button>
                         </div>
                     </div>
+
+                    {error && (
+                        <div className="text-sm text-red-600">{error}</div>
+                    )}
 
                     {/* Submit Button */}
                     <button

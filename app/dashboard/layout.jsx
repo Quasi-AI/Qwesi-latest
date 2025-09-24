@@ -1,8 +1,8 @@
-import AdminLayout from "@/components/admin/AdminLayout";
+import AdminLayout from "@/components/dashboard/AdminLayout";
 
 export const metadata = {
-    title: "GoCart. - Admin",
-    description: "GoCart. - Admin",
+    title: "Qwesi. - Dashboard",
+    description: "Qwesi. - Dashboard",
 };
 
 export default function RootAdminLayout({ children }) {

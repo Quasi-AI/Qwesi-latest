@@ -1,5 +1,5 @@
 'use client'
-import { Search, ShoppingCart, Menu, X, User, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, User, ChevronDown, Settings, Package, LogOut, Plus } from "lucide-react";
 import Link from "next/link";
 import Image from 'next/image'
 import { useRouter } from "next/navigation";
@@ -7,6 +7,9 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import LoginModal from '@/modals/LoginModal'
 import SignupModal from '@/modals/SignupModal'
+import { readAuth, clearAuth, validateStoredToken } from '@/lib/auth'
+import ForgotPasswordModal from '@/modals/ForgotPasswordModal'
+import ResetPasswordModal from '@/modals/ResetPasswordModal'
 
 const Navbar = () => {
     const router = useRouter();
@@ -17,8 +20,17 @@ const Navbar = () => {
     const [scrolled, setScrolled] = useState(false)
     const [showLogin, setShowLogin] = useState(false)
     const [showSignup, setShowSignup] = useState(false)
+    const [userDropdownOpen, setUserDropdownOpen] = useState(false)
+    const [showForgot, setShowForgot] = useState(false)
+    const [showReset, setShowReset] = useState(false)
     
     const cartCount = useSelector(state => state.cart.total)
+    
+    // Mock user state - replace this with your actual user state management
+    const [user, setUser] = useState(null)
+    // Example: const user = useSelector(state => state.auth.user)
+    // For demo, you can set a mock user:
+    // const [user, setUser] = useState({ name: 'Rexton Itsiah', email: 'rex30818@gmail.com', avatar: null })
 
     // Handle scroll effect
     useEffect(() => {
@@ -29,16 +41,64 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
-    // Close mobile menu when clicking outside
+    // Load auth and validate token on mount
+    useEffect(() => {
+        const auth = readAuth()
+        if (auth?.user) setUser(auth.user)
+        // Validate token; if invalid, user will be cleared by auto-logout
+        validateStoredToken({ onInvalid: () => setUser(null) })
+    }, [])
+
+    // Listen for global login open event
+    useEffect(() => {
+        const handler = () => setShowLogin(true)
+        window.addEventListener('auth:open-login', handler)
+        return () => window.removeEventListener('auth:open-login', handler)
+    }, [])
+
+    // Intercept clicks to protected routes and show login modal if not logged in
+    useEffect(() => {
+        const onClick = (e) => {
+            try {
+                const target = e.target
+                if (!target) return
+                const anchor = target.closest && target.closest('a[href]')
+                if (!anchor) return
+                const href = anchor.getAttribute('href')
+                if (!href || href.startsWith('#')) return
+                // Ignore new tabs or downloads
+                if (anchor.target === '_blank' || anchor.hasAttribute('download') || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+                const url = new URL(anchor.href, window.location.href)
+                if (url.origin !== window.location.origin) return
+                const path = url.pathname
+                const isProtected = path.startsWith('/dashboard') || path.startsWith('/store')
+                if (!isProtected) return
+                const auth = readAuth()
+                const loggedIn = !!auth?.token
+                if (!loggedIn) {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    window.dispatchEvent(new Event('auth:open-login'))
+                }
+            } catch {}
+        }
+        document.addEventListener('click', onClick, true)
+        return () => document.removeEventListener('click', onClick, true)
+    }, [])
+
+    // Close mobile menu and dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (mobileMenuOpen && !event.target.closest('.mobile-menu-container')) {
                 setMobileMenuOpen(false)
             }
+            if (userDropdownOpen && !event.target.closest('.user-dropdown-container')) {
+                setUserDropdownOpen(false)
+            }
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [mobileMenuOpen])
+    }, [mobileMenuOpen, userDropdownOpen])
 
     const handleSearch = (e) => {
         e.preventDefault()
@@ -52,22 +112,32 @@ const Navbar = () => {
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen)
         setSearchOpen(false)
+        setUserDropdownOpen(false)
     }
 
     const toggleSearch = () => {
         setSearchOpen(!searchOpen)
         setMobileMenuOpen(false)
+        setUserDropdownOpen(false)
+    }
+
+    const toggleUserDropdown = () => {
+        setUserDropdownOpen(!userDropdownOpen)
+        setMobileMenuOpen(false)
+        setSearchOpen(false)
     }
 
     // Modal handlers
     const handleLoginClick = () => {
         setShowLogin(true)
         setMobileMenuOpen(false)
+        setUserDropdownOpen(false)
     }
 
     const handleSignupClick = () => {
         setShowSignup(true)
         setMobileMenuOpen(false)
+        setUserDropdownOpen(false)
     }
 
     const switchToSignup = () => {
@@ -80,12 +150,23 @@ const Navbar = () => {
         setShowLogin(true)
     }
 
+    const handleLogout = () => {
+        clearAuth()
+        setUser(null)
+        setUserDropdownOpen(false)
+    }
+
     const navLinks = [
         { href: '/', label: 'Home' },
         { href: '/shop', label: 'Shop' },
         { href: '/scholarships', label: 'Scholarships' },
-        { href: '/about', label: 'About' },
-        { href: '/contact', label: 'Contact' },
+        { href: '/about', label: 'About' }
+    ]
+
+    const userMenuItems = [
+        { href: '/profile', label: 'Manage account', icon: Settings },
+        { href: '/cart', label: 'Cart', icon: ShoppingCart },
+        { href: '/orders', label: 'My Orders', icon: Package },
     ]
 
     return (
@@ -174,14 +255,108 @@ const Navbar = () => {
                                 )}
                             </Link>
 
-                            {/* Login Button */}
-                            <button 
-                                onClick={handleLoginClick}
-                                className="bg-[#5C3AEB] hover:bg-[#3525b8] text-white px-6 py-2.5 rounded-full font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 flex items-center space-x-2"
-                            >
-                                <User size={18} />
-                                <span>Login</span>
-                            </button>
+                            {/* User Profile Dropdown or Login Button */}
+                            {user ? (
+                                <div className="user-dropdown-container relative">
+                                    <button 
+                                        onClick={toggleUserDropdown}
+                                        className="flex items-center space-x-3 p-2 text-gray-700 hover:text-[#5C3AEB] hover:bg-gray-50 rounded-full transition-all duration-200"
+                                    >
+                                        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                                            {user.avatar ? (
+                                                <Image 
+                                                    src={user.avatar} 
+                                                    alt={user.name} 
+                                                    width={32} 
+                                                    height={32}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-sm font-medium text-gray-600">
+                                                    {user.name?.charAt(0) || 'U'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <ChevronDown 
+                                            size={16} 
+                                            className={`transition-transform duration-200 ${
+                                                userDropdownOpen ? 'rotate-180' : 'rotate-0'
+                                            }`} 
+                                        />
+                                    </button>
+
+                                    {/* User Dropdown Menu */}
+                                    {userDropdownOpen && (
+                                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                                            {/* User Info */}
+                                            <div className="px-4 py-3 border-b border-gray-100">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                                                        {user.avatar ? (
+                                                            <Image 
+                                                                src={user.avatar} 
+                                                                alt={user.name} 
+                                                                width={40} 
+                                                                height={40}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-lg font-medium text-gray-600">
+                                                                {user.name?.charAt(0) || 'U'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                                                        <p className="text-xs text-gray-500">{user.email}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Menu Items */}
+                                            {userMenuItems.map((item) => {
+                                                const IconComponent = item.icon
+                                                return (
+                                                    <Link 
+                                                        key={item.href}
+                                                        href={item.href}
+                                                        onClick={() => setUserDropdownOpen(false)}
+                                                        className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                                                    >
+                                                        <IconComponent size={16} className="text-gray-500" />
+                                                        <span>{item.label}</span>
+                                                    </Link>
+                                                )
+                                            })}
+
+                                            {/* Sign Out */}
+                                            <button 
+                                                onClick={handleLogout}
+                                                className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                                            >
+                                                <LogOut size={16} className="text-gray-500" />
+                                                <span>Sign out</span>
+                                            </button>
+
+                                            <hr className="my-2 border-gray-100" />
+
+                                            {/* Add Account */}
+                                            <button className="flex items-center space-x-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                                                <Plus size={16} className="text-gray-500" />
+                                                <span>Add account</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={handleLoginClick}
+                                    className="bg-[#5C3AEB] hover:bg-[#3525b8] text-white px-6 py-2.5 rounded-full font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 flex items-center space-x-2"
+                                >
+                                    <User size={18} />
+                                    <span>Login</span>
+                                </button>
+                            )}
                         </div>
 
                         {/* Mobile Actions */}
@@ -274,6 +449,31 @@ const Navbar = () => {
                     mobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
                 }`}>
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+                        {/* User Info for Mobile (if logged in) */}
+                        {user && (
+                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                                    {user.avatar ? (
+                                        <Image 
+                                            src={user.avatar} 
+                                            alt={user.name} 
+                                            width={40} 
+                                            height={40}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <span className="text-lg font-medium text-gray-600">
+                                            {user.name?.charAt(0) || 'U'}
+                                        </span>
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                                    <p className="text-xs text-gray-500">{user.email}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Navigation Links */}
                         <div className="space-y-1">
                             {navLinks.map((link, index) => (
@@ -303,23 +503,54 @@ const Navbar = () => {
                                 ? 'translate-y-0 opacity-100' 
                                 : 'translate-y-4 opacity-0'
                         }`} style={{ transitionDelay: mobileMenuOpen ? '200ms' : '0ms' }}>
-                            <button 
-                                onClick={handleLoginClick}
-                                className="w-full bg-[#5C3AEB] hover:bg-[#3525b8] text-white py-3 px-6 rounded-full font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
-                            >
-                                <User size={18} />
-                                <span>Login</span>
-                            </button>
                             
-                            <div className="text-center text-sm text-gray-500">
-                                <span>New customer? </span>
-                                <button 
-                                    onClick={handleSignupClick}
-                                    className="text-[#5C3AEB] hover:underline font-medium"
-                                >
-                                    Create an account
-                                </button>
-                            </div>
+                            {user ? (
+                                <>
+                                    {/* User Menu Items for Mobile */}
+                                    {userMenuItems.map((item) => {
+                                        const IconComponent = item.icon
+                                        return (
+                                            <Link 
+                                                key={item.href}
+                                                href={item.href}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className="flex items-center space-x-3 text-gray-700 hover:text-[#5C3AEB] py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+                                            >
+                                                <IconComponent size={18} />
+                                                <span>{item.label}</span>
+                                            </Link>
+                                        )
+                                    })}
+                                    
+                                    <button 
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center space-x-3 text-red-600 hover:text-red-700 py-2 px-4 rounded-lg hover:bg-red-50 transition-colors"
+                                    >
+                                        <LogOut size={18} />
+                                        <span>Sign out</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button 
+                                        onClick={handleLoginClick}
+                                        className="w-full bg-[#5C3AEB] hover:bg-[#3525b8] text-white py-3 px-6 rounded-full font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+                                    >
+                                        <User size={18} />
+                                        <span>Login</span>
+                                    </button>
+                                    
+                                    <div className="text-center text-sm text-gray-500">
+                                        <span>New customer? </span>
+                                        <button 
+                                            onClick={handleSignupClick}
+                                            className="text-[#5C3AEB] hover:underline font-medium"
+                                        >
+                                            Create an account
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -333,6 +564,18 @@ const Navbar = () => {
                 isOpen={showLogin}
                 onClose={() => setShowLogin(false)}
                 onSwitchToSignup={switchToSignup}
+                onLoggedIn={(result) => { setUser(result.user || null) }}
+                onForgotPassword={() => { setShowLogin(false); setShowForgot(true) }}
+            />
+
+            <ForgotPasswordModal
+                isOpen={showForgot}
+                onClose={() => setShowForgot(false)}
+                onSwitchToReset={() => { setShowForgot(false); setShowReset(true) }}
+            />
+            <ResetPasswordModal
+                isOpen={showReset}
+                onClose={() => setShowReset(false)}
             />
 
             {/* Signup Modal */}

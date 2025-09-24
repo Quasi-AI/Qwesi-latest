@@ -221,6 +221,13 @@ const JobsPage = () => {
   }
 
   const openApplicationModal = (job) => {
+    const authRaw = localStorage.getItem('auth')
+    const auth = authRaw ? JSON.parse(authRaw) : null
+    if (!auth?.token) {
+      // trigger navbar to open login
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+      return
+    }
     setSelectedJob(job)
     setShowApplicationModal(true)
   }

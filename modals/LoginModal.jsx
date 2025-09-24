@@ -3,11 +3,14 @@ import React, { useState, useEffect } from 'react'
 import { X, Eye, EyeOff } from 'lucide-react'
 import Image from "next/image"
 
-const LoginModal = ({ isOpen, onClose, onSwitchToSignup }) => {
-    const [email, setEmail] = useState('')
+import { loginWithCredentials, persistAuth, startGoogleOAuth } from '@/lib/auth'
+
+const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onLoggedIn, onForgotPassword }) => {
+    const [phone, setPhone] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState('')
 
     // Close modal on escape key
     useEffect(() => {
@@ -29,18 +32,25 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }) => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setIsLoading(true)
-        
-        // Simulate API call
-        setTimeout(() => {
+        setError('')
+        try {
+            const result = await loginWithCredentials(phone, password)
+            if (result?.success) {
+                persistAuth({ user: result.user, token: result.token })
+                if (typeof onLoggedIn === 'function') onLoggedIn(result)
+                onClose()
+            } else {
+                setError(result?.message || 'Login failed')
+            }
+        } catch (err) {
+            setError(err?.message || 'Login failed. Please check your credentials.')
+        } finally {
             setIsLoading(false)
-            console.log('Login:', { email, password })
-            onClose()
-        }, 1500)
+        }
     }
 
     const handleGoogleLogin = () => {
-        console.log('Google login clicked')
-        // Add Google OAuth logic here
+        startGoogleOAuth()
     }
 
     if (!isOpen) return null
@@ -102,16 +112,16 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }) => {
                         </div>
                     </div>
 
-                    {/* Email Input */}
+                    {/* Phone Input */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email address
+                            Phone number
                         </label>
                         <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email address"
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="Enter your phone number"
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]/20 focus:border-[#5C3AEB] transition-colors"
                             required
                         />
@@ -141,6 +151,10 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }) => {
                         </div>
                     </div>
 
+                    {error && (
+                        <div className="text-sm text-red-600">{error}</div>
+                    )}
+
                     {/* Submit Button */}
                     <button
                         type="submit"
@@ -155,15 +169,23 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup }) => {
                     </button>
                 </form>
 
-                {/* Sign Up Link */}
-                <div className="mt-6 text-center">
-                    <span className="text-gray-600">Don't have an account? </span>
+                <div className="mt-6 flex items-center justify-between text-sm">
                     <button
-                        onClick={onSwitchToSignup}
+                        onClick={onForgotPassword}
                         className="text-[#5C3AEB] hover:text-[#3525b8] font-medium hover:underline transition-colors"
+                        type="button"
                     >
-                        Sign up
+                        Forgot password?
                     </button>
+                    <div>
+                        <span className="text-gray-600">Don't have an account? </span>
+                        <button
+                            onClick={onSwitchToSignup}
+                            className="text-[#5C3AEB] hover:text-[#3525b8] font-medium hover:underline transition-colors"
+                        >
+                            Sign up
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

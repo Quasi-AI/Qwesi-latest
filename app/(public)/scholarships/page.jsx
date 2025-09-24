@@ -253,6 +253,16 @@ const ScholarshipsPage = () => {
   }
 
   const applyToScholarship = (scholarship) => {
+    // Require login
+    try {
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      if (!auth?.token) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+        return
+      }
+    } catch {}
+
     if (isDeadlinePassed(scholarship.deadline || '')) {
       alert('Application deadline has passed')
       return

@@ -3,9 +3,10 @@ import { useEffect, useState } from "react"
 import Loading from "../Loading"
 import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
-import SellerNavbar from "./StoreNavbar"
+import Navbar from "../Navbar"
 import SellerSidebar from "./StoreSidebar"
 import { dummyStoreData } from "@/assets/assets"
+import { readAuth, validateStoredToken } from "@/lib/auth"
 
 const StoreLayout = ({ children }) => {
 
@@ -14,21 +15,24 @@ const StoreLayout = ({ children }) => {
     const [loading, setLoading] = useState(true)
     const [storeInfo, setStoreInfo] = useState(null)
 
-    const fetchIsSeller = async () => {
-        setIsSeller(true)
-        setStoreInfo(dummyStoreData)
-        setLoading(false)
-    }
-
     useEffect(() => {
-        fetchIsSeller()
+        const init = async () => {
+            const auth = readAuth()
+            if (!auth?.user) { setIsSeller(false); setLoading(false); return }
+            const valid = await validateStoredToken()
+            if (!valid.valid) { setIsSeller(false); setLoading(false); return }
+            setIsSeller(true)
+            setStoreInfo(dummyStoreData)
+            setLoading(false)
+        }
+        init()
     }, [])
 
     return loading ? (
         <Loading />
     ) : isSeller ? (
         <div className="flex flex-col h-screen">
-            <SellerNavbar />
+            <Navbar />
             <div className="flex flex-1 items-start h-full overflow-y-scroll no-scrollbar">
                 <SellerSidebar storeInfo={storeInfo} />
                 <div className="flex-1 h-full p-5 lg:pl-12 lg:pt-12 overflow-y-scroll">

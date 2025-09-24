@@ -78,7 +78,7 @@ const Hero = () => {
                                     <ArrowRightIcon className='w-5 h-5' />
                                 </Link>
                                 <Link 
-                                    href="/post-ad"
+                                    href="/dashboard"
                                     className='relative z-20 flex items-center justify-center gap-2 bg-white border-2 border-[#5C3AEB] text-[#5C3AEB] px-8 py-4 rounded-xl text-lg font-semibold hover:bg-[#5C3AEB] hover:text-white transition-all cursor-pointer'
                                 >
                                     <Play className='w-5 h-5' />
@@ -92,7 +92,7 @@ const Hero = () => {
                                 <div className='flex flex-wrap items-center gap-4'>
                                     {/* WhatsApp */}
                                     <a 
-                                        href="https://wa.me/233XXXXXXXXX" 
+                                        href="https://api.whatsapp.com/send/?phone=12019790148&text&type=phone_number&app_absent=0" 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all cursor-pointer"
@@ -103,18 +103,18 @@ const Hero = () => {
                                     
                                     {/* Facebook */}
                                     <a 
-                                        href="https://facebook.com/yourpage" 
+                                        href="https://m.me/61577053655499" 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all cursor-pointer"
                                     >
-                                        <Facebook className='w-4 h-4' />
-                                        <span>Facebook</span>
+                                        <MessageCircleMore className='w-4 h-4' />
+                                        <span>Messenger</span>
                                     </a>
                                     
                                     {/* LinkedIn */}
                                     <a 
-                                        href="https://linkedin.com/company/yourcompany" 
+                                        href="https://www.linkedin.com/company/108025422" 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-2 bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-all cursor-pointer"
@@ -125,7 +125,7 @@ const Hero = () => {
                                     
                                     {/* Phone Call */}
                                     <a 
-                                        href="tel:+233XXXXXXXXX" 
+                                        href="tel:+12019790148" 
                                         className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-all cursor-pointer"
                                     >
                                         <Phone className='w-4 h-4' />
@@ -188,7 +188,7 @@ const Hero = () => {
                     <div className='mt-16 relative z-20'>
                         <div className='overflow-x-auto pb-4 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400'>
                             <div className='flex gap-4 min-w-max'>
-                                <Link href="/categories/vehicles" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=vehicles" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         🚗
                                     </div>
@@ -196,7 +196,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>12K+ listings</p>
                                 </Link>
                                 
-                                <Link href="/categories/property" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=property" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         🏠
                                     </div>
@@ -204,7 +204,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>8K+ listings</p>
                                 </Link>
                                 
-                                <Link href="/categories/electronics" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=electronics" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         📱
                                     </div>
@@ -212,7 +212,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>15K+ listings</p>
                                 </Link>
                                 
-                                <Link href="/find-talent" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#00C4A7]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/talent-pool" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#00C4A7]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         👥
                                     </div>
@@ -220,7 +220,15 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>15K+ freelancers</p>
                                 </Link>
 
-                                <Link href="/job-seeker" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#FF6B6B]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/investors" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#00C4A7]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        💰
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Find Investors</h4>
+                                    <p className='text-sm text-gray-600'>15K+ investors</p>
+                                </Link>
+
+                                <Link href="/jobs" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#FF6B6B]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         🔍
                                     </div>
@@ -228,7 +236,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>2.5K+ opportunities</p>
                                 </Link>
 
-                                <Link href="/categories/services" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=services" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         🔧
                                     </div>
@@ -236,7 +244,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>9K+ providers</p>
                                 </Link>
 
-                                <Link href="/categories/furniture" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=furniture" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         🪑
                                     </div>
@@ -244,7 +252,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>4K+ listings</p>
                                 </Link>
 
-                                <Link href="/categories/books" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=books" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         📚
                                     </div>
@@ -252,7 +260,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>3K+ listings</p>
                                 </Link>
 
-                                <Link href="/categories/sports" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=sports" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         ⚽
                                     </div>
@@ -260,7 +268,7 @@ const Hero = () => {
                                     <p className='text-sm text-gray-600'>2K+ listings</p>
                                 </Link>
 
-                                <Link href="/categories/pets" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                <Link href="/shop?category=pets" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
                                     <div className='w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
                                         🐕
                                     </div>
