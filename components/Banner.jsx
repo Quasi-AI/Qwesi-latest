@@ -4,7 +4,14 @@ import toast from 'react-hot-toast';
 
 export default function Banner() {
 
-    const [isOpen, setIsOpen] = React.useState(true);
+    const [isOpen, setIsOpen] = React.useState(() => {
+        // Check localStorage for banner state, default to true if not found
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('bannerOpen');
+            return stored === null ? true : stored === 'true';
+        }
+        return true;
+    });
     const [donationLoading, setDonationLoading] = React.useState(false);
 
     const handleDonation = async () => {
@@ -45,7 +52,7 @@ export default function Banner() {
     };
 
     return isOpen && (
-        <div className="w-full px-6 py-2 font-medium text-sm text-white text-center bg-[#432DD7]">
+        <div className="w-full px-6 py-2 font-medium text-sm text-white text-center bg-[#5C3AEB]">
             <div className='flex items-center justify-between max-w-7xl mx-auto'>
                 <p>Help us keep Qwesi AI free for students and job seekers!</p>
                 <div className="flex items-center space-x-6">
@@ -53,12 +60,15 @@ export default function Banner() {
                         onClick={handleDonation} 
                         disabled={donationLoading}
                         type="button" 
-                        className="font-normal text-[#432DD7] bg-white px-7 py-2 rounded-full max-sm:hidden hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="font-normal text-[#5C3AEB] bg-white px-7 py-2 rounded-full max-sm:hidden hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {donationLoading ? 'Processing...' : 'Donate Now'}
                     </button>
                     <button 
-                        onClick={() => setIsOpen(false)} 
+                        onClick={() => {
+                            setIsOpen(false);
+                            localStorage.setItem('bannerOpen', 'false');
+                        }} 
                         type="button" 
                         className="font-normal text-white py-2 rounded-full hover:opacity-80 transition-opacity"
                     >

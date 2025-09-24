@@ -1,6 +1,6 @@
 'use client'
 import { assets } from '@/assets/assets'
-import { ArrowRightIcon, ChevronRightIcon, MessageCircle, Facebook, Linkedin } from 'lucide-react'
+import { ArrowRightIcon, ChevronRightIcon, MessageCircle, Facebook, Linkedin, Star, Users, TrendingUp, Search, Play, Phone, MessageCircleMore, Briefcase } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
@@ -11,78 +11,270 @@ const Hero = () => {
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
 
     return (
-        <div className='mx-6'>
-            {/* Original Hero Section */}
-            <div className='flex max-xl:flex-col gap-8 max-w-7xl mx-auto my-10'>
-                <div className='relative flex-1 flex flex-col bg-white border-2 border-[#432DD7] rounded-3xl xl:min-h-100 group'>
-                    <div className='p-16 sm:p-16'>
-                        <div className='inline-flex items-center gap-3 text-[#432DD7] pr-4 p-1 rounded-full text-xs sm:text-sm'>
-                            <span className='bg-[#432DD7] px-3 py-1 max-sm:ml-1 rounded-full text-white text-xs'>NEWS</span> Instant Connections! <ChevronRightIcon className='group-hover:ml-2 transition-all' size={16} />
-                        </div>
-                        <h2 className='text-3xl sm:text-5xl font-medium text-[#432DD7] max-w-xs sm:max-w-md'>
-                            Your Career & Recruitment Assistant
-                        </h2>
-                        <p className='text-gray-600 text-sm sm:text-base leading-relaxed mb-4 max-w-lg'>
-                            Get job alerts, homework help, and connect with investors through voice, WhatsApp, and smart conversations.
-                        </p>
-                        <div className='flex flex-col sm:flex-row gap-3 mt-4 sm:mt-6'>
-                            <button className='bg-[#432DD7] text-white text-sm py-2.5 px-7 sm:py-5 sm:px-12 rounded-md hover:bg-[#342299] hover:scale-103 active:scale-95 transition'>LEARN MORE</button>
-                            <Link 
-                                href="https://home.qwesi.org" 
-                                target="_blank"
-                                className='bg-white border-2 border-[#432DD7] text-[#432DD7] text-sm py-2.5 px-7 sm:py-5 sm:px-12 rounded-md hover:bg-[#432DD7] hover:text-white hover:scale-103 active:scale-95 transition text-center'
-                            >
-                                Get Started
-                            </Link>
+        <div className='relative z-10'>
+            {/* Modern Hero Section */}
+            <div className='relative overflow-hidden bg-gradient-to-br from-[#5C3AEB]/5 via-white to-[#5C3AEB]/10'>
+                <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20'>
+                    
+                    {/* Main Hero Content */}
+                    <div className='grid lg:grid-cols-2 gap-12 lg:gap-16 items-center'>
+                        
+                        {/* Left Column - Content */}
+                        <div className='space-y-8'>
+                            
+                            {/* Badge */}
+                            <div className='inline-flex items-center gap-2 bg-[#5C3AEB] text-white px-4 py-2 rounded-full text-sm font-medium'>
+                                <Star className='w-4 h-4 fill-current' />
+                                #1 Marketplace in Ghana
+                            </div>
+                            
+                            {/* Main Heading */}
+                            <div className='space-y-4'>
+                                <h1 className='text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight'>
+                                    Buy, Sell & Find 
+                                    <span className='text-[#5C3AEB] block'>Anything Locally</span>
+                                </h1>
+                                <p className='text-xl text-gray-600 leading-relaxed max-w-lg'>
+                                    Connect with real people in your area. From cars to jobs, electronics to services - discover thousands of opportunities.
+                                </p>
+                            </div>
+                            
+                            {/* Stats */}
+                            <div className='flex flex-wrap gap-8 text-sm'>
+                                <div className='flex items-center gap-2'>
+                                    <Users className='w-5 h-5 text-[#5C3AEB]' />
+                                    <span className='text-gray-600'>4M+ Users</span>
+                                </div>
+                                <div className='flex items-center gap-2'>
+                                    <TrendingUp className='w-5 h-5 text-[#5C3AEB]' />
+                                    <span className='text-gray-600'>50K+ Daily Ads</span>
+                                </div>
+                                <div className='flex items-center gap-2'>
+                                    <Star className='w-5 h-5 text-[#5C3AEB]' />
+                                    <span className='text-gray-600'>4.8 Rating</span>
+                                </div>
+                            </div>
+                            
+                            {/* Search Bar */}
+                            <div className='relative max-w-lg'>
+                                <Search className='absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400' />
+                                <input
+                                    type='text'
+                                    placeholder='What are you looking for?'
+                                    className='w-full pl-12 pr-32 py-4 border-2 border-gray-200 rounded-xl text-lg focus:outline-none focus:border-[#5C3AEB] focus:ring-2 focus:ring-[#5C3AEB]/20'
+                                />
+                                <button className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#5C3AEB] text-white px-6 py-2 rounded-lg hover:bg-[#342299]'>
+                                    Search
+                                </button>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className='flex flex-col sm:flex-row gap-4'>
+                                <Link 
+                                    href="/categories"
+                                    className='relative z-20 flex items-center justify-center gap-2 bg-[#5C3AEB] text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-[#342299] transition-all cursor-pointer'
+                                >
+                                    Browse Categories
+                                    <ArrowRightIcon className='w-5 h-5' />
+                                </Link>
+                                <Link 
+                                    href="/post-ad"
+                                    className='relative z-20 flex items-center justify-center gap-2 bg-white border-2 border-[#5C3AEB] text-[#5C3AEB] px-8 py-4 rounded-xl text-lg font-semibold hover:bg-[#5C3AEB] hover:text-white transition-all cursor-pointer'
+                                >
+                                    <Play className='w-5 h-5' />
+                                    Post Free Ad
+                                </Link>
+                            </div>
+
+                            {/* Instant Connection Section */}
+                            <div className='pt-6 border-t border-gray-200'>
+                                <p className='text-sm text-gray-600 mb-4'>Get instant help:</p>
+                                <div className='flex flex-wrap items-center gap-4'>
+                                    {/* WhatsApp */}
+                                    <a 
+                                        href="https://wa.me/233XXXXXXXXX" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all cursor-pointer"
+                                    >
+                                        <MessageCircleMore className='w-4 h-4' />
+                                        <span>WhatsApp</span>
+                                    </a>
+                                    
+                                    {/* Facebook */}
+                                    <a 
+                                        href="https://facebook.com/yourpage" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all cursor-pointer"
+                                    >
+                                        <Facebook className='w-4 h-4' />
+                                        <span>Facebook</span>
+                                    </a>
+                                    
+                                    {/* LinkedIn */}
+                                    <a 
+                                        href="https://linkedin.com/company/yourcompany" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-900 transition-all cursor-pointer"
+                                    >
+                                        <Linkedin className='w-4 h-4' />
+                                        <span>LinkedIn</span>
+                                    </a>
+                                    
+                                    {/* Phone Call */}
+                                    <a 
+                                        href="tel:+233XXXXXXXXX" 
+                                        className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-all cursor-pointer"
+                                    >
+                                        <Phone className='w-4 h-4' />
+                                        <span>Call Now</span>
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                         
-                        {/* Social Media Buttons */}
-                        <div className='flex gap-3 mt-6'>
-                            <Link 
-                                href="https://wa.me/1234567890" 
-                                target="_blank"
-                                className="flex items-center gap-2 bg-[#432DD7] hover:bg-[#342299] text-white px-4 py-2 rounded-full transition-all text-xs"
-                            >
-                                <MessageCircle size={16} />
-                                WhatsApp
-                            </Link>
+                        {/* Right Column - Visual Content */}
+                        <div className='relative z-10'>
                             
-                            <Link 
-                                href="https://facebook.com/qwesi" 
-                                target="_blank"
-                                className="flex items-center gap-2 bg-white border border-[#432DD7] text-[#432DD7] hover:bg-[#432DD7] hover:text-white px-4 py-2 rounded-full transition-all text-xs"
-                            >
-                                <Facebook size={16} />
-                                Facebook
-                            </Link>
-                            
-                            <Link 
-                                href="https://linkedin.com/company/qwesi" 
-                                target="_blank"
-                                className="flex items-center gap-2 bg-white border border-[#432DD7] text-[#432DD7] hover:bg-[#432DD7] hover:text-white px-4 py-2 rounded-full transition-all text-xs"
-                            >
-                                <Linkedin size={16} />
-                                LinkedIn
-                            </Link>
+                            {/* Main Hero Image Area */}
+                            <div className='relative bg-gradient-to-br from-[#5C3AEB] to-[#342299] rounded-3xl p-8 lg:p-12'>
+                                <div className='text-center text-white space-y-6'>
+                                    <h3 className='text-2xl lg:text-3xl font-bold'>Start Selling Today!</h3>
+                                    <p className='text-white/70'>Join thousands of successful sellers</p>
+                                    
+                                    {/* Quick Stats Cards */}
+                                    <div className='grid grid-cols-2 gap-4 mt-8'>
+                                        <div className='bg-white/10 backdrop-blur rounded-xl p-4'>
+                                            <div className='text-2xl font-bold'>89K+</div>
+                                            <div className='text-sm opacity-80'>Active Listings</div>
+                                        </div>
+                                        <div className='bg-white/10 backdrop-blur rounded-xl p-4'>
+                                            <div className='text-2xl font-bold'>24/7</div>
+                                            <div className='text-sm opacity-80'>Support</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Social Proof */}
+                                    <div className='pt-6'>
+                                        <p className='text-sm text-white/80 mb-3'>Connect with us:</p>
+                                        <div className='flex justify-center space-x-3'>
+                                            <a href="#" className='w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all'>
+                                                <MessageCircleMore className='w-4 h-4 text-white' />
+                                            </a>
+                                            <a href="#" className='w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all'>
+                                                <Facebook className='w-4 h-4 text-white' />
+                                            </a>
+                                            <a href="#" className='w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-all'>
+                                                <Linkedin className='w-4 h-4 text-white' />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* Floating Elements */}
+                                <div className='absolute -top-4 -right-4 bg-white rounded-full p-3 shadow-lg'>
+                                    <MessageCircle className='w-6 h-6 text-[#5C3AEB]' />
+                                </div>
+                                <div className='absolute -bottom-4 -left-4 bg-white rounded-full p-3 shadow-lg'>
+                                    <Star className='w-6 h-6 text-yellow-500 fill-current' />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Horizontally Scrollable Quick Access Cards */}
+                    <div className='mt-16 relative z-20'>
+                        <div className='overflow-x-auto pb-4 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400'>
+                            <div className='flex gap-4 min-w-max'>
+                                <Link href="/categories/vehicles" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        🚗
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Vehicles</h4>
+                                    <p className='text-sm text-gray-600'>12K+ listings</p>
+                                </Link>
+                                
+                                <Link href="/categories/property" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        🏠
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Property</h4>
+                                    <p className='text-sm text-gray-600'>8K+ listings</p>
+                                </Link>
+                                
+                                <Link href="/categories/electronics" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        📱
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Electronics</h4>
+                                    <p className='text-sm text-gray-600'>15K+ listings</p>
+                                </Link>
+                                
+                                <Link href="/find-talent" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#00C4A7]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        👥
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Find Talent</h4>
+                                    <p className='text-sm text-gray-600'>15K+ freelancers</p>
+                                </Link>
+
+                                <Link href="/job-seeker" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#FF6B6B]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        🔍
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Job Seeker</h4>
+                                    <p className='text-sm text-gray-600'>2.5K+ opportunities</p>
+                                </Link>
+
+                                <Link href="/categories/services" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-cyan-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        🔧
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Services</h4>
+                                    <p className='text-sm text-gray-600'>9K+ providers</p>
+                                </Link>
+
+                                <Link href="/categories/furniture" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        🪑
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Furniture</h4>
+                                    <p className='text-sm text-gray-600'>4K+ listings</p>
+                                </Link>
+
+                                <Link href="/categories/books" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        📚
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Books & Education</h4>
+                                    <p className='text-sm text-gray-600'>3K+ listings</p>
+                                </Link>
+
+                                <Link href="/categories/sports" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        ⚽
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Sports & Fitness</h4>
+                                    <p className='text-sm text-gray-600'>2K+ listings</p>
+                                </Link>
+
+                                <Link href="/categories/pets" className='relative z-20 group bg-white rounded-2xl p-6 shadow-sm hover:shadow-lg border border-gray-100 hover:border-[#5C3AEB]/30 transition-all cursor-pointer min-w-[200px]'>
+                                    <div className='w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform'>
+                                        🐕
+                                    </div>
+                                    <h4 className='font-semibold text-gray-900 mb-1'>Pets & Animals</h4>
+                                    <p className='text-sm text-gray-600'>1.5K+ listings</p>
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className='flex flex-col md:flex-row xl:flex-col gap-5 w-full xl:max-w-sm text-sm text-gray-600'>
-                    <div className='flex-1 flex items-center justify-between w-full bg-white border-2 border-[#432DD7] rounded-3xl p-6 px-8 group'>
-                        <div>
-                            <p className='text-3xl font-medium text-[#432DD7] max-w-40'>All Categories</p>
-                            <p className='flex items-center gap-1 mt-4 text-gray-600'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
-                        </div>
-                        <Image className='w-35' src={assets.hero_product_img1} alt="" />
-                    </div>
-                    <Link href="/jobs"  className='flex-1 flex items-center justify-between w-full bg-[#432DD7] rounded-3xl p-6 px-8 group cursor-pointer'>
-                        <div>
-                            <p className='text-3xl font-medium text-white max-w-40'>Jobs</p>
-                            <p className='flex items-center gap-1 mt-4 text-white'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
-                        </div>
-                        <Image className='w-35' src={assets.job_seeker} alt="" />
-                    </Link >
-                </div>
+                
+                {/* Background Elements - Ensure they're behind content */}
+                <div className='absolute top-0 right-0 w-96 h-96 bg-[#5C3AEB]/5 rounded-full blur-3xl -z-10'></div>
+                <div className='absolute bottom-0 left-0 w-96 h-96 bg-[#5C3AEB]/5 rounded-full blur-3xl -z-10'></div>
             </div>
 
             <CategoriesMarquee />

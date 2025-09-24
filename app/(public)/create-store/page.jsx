@@ -28,16 +28,12 @@ export default function CreateStore() {
 
     const fetchSellerStatus = async () => {
         // Logic to check if the store is already submitted
-
-
         setLoading(false)
     }
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
         // Logic to submit the store details
-
-
     }
 
     useEffect(() => {

@@ -1,27 +1,13 @@
 'use client'
 import React, { useState, useEffect, useMemo } from 'react'
 import { 
-  Search, 
-  Filter, 
-  MapPin, 
-  Building, 
-  Zap, 
-  Clock, 
-  ChevronRight, 
-  ChevronLeft, 
-  X, 
-  Briefcase, 
-  ArrowRight, 
-  Heart, 
-  User, 
-  FileText, 
-  Upload, 
-  Plus, 
-  MessageSquare, 
-  Send, 
-  Globe 
+  Search, Filter, MapPin, Building, Zap, Clock, ChevronRight, 
+  ChevronLeft, X, Briefcase, ArrowRight, Heart, User, FileText, 
+  Upload, Plus, MessageSquare, Send, Globe, Loader2, ExternalLink,
+  Building2, Users, DollarSign, Calendar, Target, Award, Star
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Link from 'next/link'
 
 const JobsPage = () => {
   // State management
@@ -37,39 +23,20 @@ const JobsPage = () => {
   const [sortBy, setSortBy] = useState('newest')
   const [savedJobs, setSavedJobs] = useState([])
   const [userApplications, setUserApplications] = useState([])
+  const [searchLoading, setSearchLoading] = useState(false)
 
   // Filter states
   const [filters, setFilters] = useState({
     location: '',
     country: '',
     sector: '',
-    experience_level: ''
+    experience_level: '',
+    salary_range: ''
   })
 
   // Application form states
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [applicationLoading, setApplicationLoading] = useState(false)
-  const [applicationForm, setApplicationForm] = useState({
-    jobId: '',
-    applicantDetails: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      address: '',
-      linkedin: '',
-      portfolio: ''
-    },
-    coverLetter: '',
-    skills: [],
-    experience: {
-      years: 0,
-      description: ''
-    }
-  })
-  const [resumeFile, setResumeFile] = useState(null)
-  const [newSkill, setNewSkill] = useState('')
-  const [applicationErrors, setApplicationErrors] = useState({})
 
   // Helper function to extract country from location
   const extractCountryFromLocation = (location) => {
@@ -79,9 +46,7 @@ const JobsPage = () => {
       'Ghana', 'Nigeria', 'Kenya', 'South Africa', 'Egypt', 'Morocco', 'Tunisia',
       'Ethiopia', 'Uganda', 'Tanzania', 'Rwanda', 'Botswana', 'Zambia', 'Zimbabwe',
       'United Kingdom', 'UK', 'Germany', 'France', 'Spain', 'Italy', 'Netherlands',
-      'United States', 'USA', 'US', 'Canada', 'Mexico',
-      'India', 'China', 'Japan', 'Singapore', 'Malaysia', 'Thailand', 'Vietnam',
-      'Australia', 'New Zealand', 'Brazil', 'Argentina', 'Chile'
+      'United States', 'USA', 'US', 'Canada', 'Mexico', 'India', 'China', 'Japan'
     ]
     
     for (const country of countryPatterns) {
@@ -93,17 +58,7 @@ const JobsPage = () => {
     }
     
     const parts = location.split(',').map(part => part.trim())
-    if (parts.length >= 2) {
-      const lastPart = parts[parts.length - 1]
-      for (const country of countryPatterns) {
-        if (lastPart.toLowerCase() === country.toLowerCase()) {
-          return country
-        }
-      }
-      return lastPart
-    }
-    
-    return ''
+    return parts.length >= 2 ? parts[parts.length - 1] : ''
   }
 
   // Computed values
@@ -124,7 +79,10 @@ const JobsPage = () => {
 
   const uniqueExperienceLevels = useMemo(() => {
     const levels = jobs.map(job => job.experience_level).filter(Boolean)
-    return [...new Set(levels)].sort()
+    return [...new Set(levels)].sort((a, b) => {
+      const order = ['Entry Level', 'Mid Level', 'Senior Level', 'Executive']
+      return order.indexOf(a) - order.indexOf(b)
+    })
   }, [jobs])
 
   const filteredJobs = useMemo(() => {
@@ -158,6 +116,7 @@ const JobsPage = () => {
       filtered = filtered.filter(job => job.experience_level === filters.experience_level)
     }
 
+    // Sort jobs
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -184,80 +143,44 @@ const JobsPage = () => {
     return filteredJobs.slice(start, end)
   }, [filteredJobs, currentPage, jobsPerPage])
 
-  const visiblePages = useMemo(() => {
-    const pages = []
-    const maxVisible = 5
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
-    let endPage = Math.min(totalPages, startPage + maxVisible - 1)
-
-    if (endPage - startPage + 1 < maxVisible) {
-      startPage = Math.max(1, endPage - maxVisible + 1)
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i)
-    }
-
-    return pages
-  }, [currentPage, totalPages])
-
   // API functions
   const fetchJobs = async () => {
     setLoading(true)
     setError(null)
     
     try {
-      const queryParams = new URLSearchParams()
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1500))
       
-      if (searchQuery) queryParams.append('search', searchQuery)
-      if (filters.country) queryParams.append('country', filters.country)
-      if (filters.location) queryParams.append('location', filters.location)
-      if (filters.sector) queryParams.append('sector', filters.sector)
-      if (filters.experience_level) queryParams.append('experience_level', filters.experience_level)
-      if (sortBy) queryParams.append('sort', sortBy)
-      if (currentPage) queryParams.append('page', currentPage.toString())
-      queryParams.append('limit', jobsPerPage.toString())
+      // Mock data - replace with actual API call
+      const mockJobs = Array.from({ length: 50 }, (_, i) => ({
+        _id: `job-${i + 1}`,
+        title: ['Software Engineer', 'Product Manager', 'Data Analyst', 'UX Designer', 'DevOps Engineer'][i % 5],
+        employer: ['TechCorp', 'InnovateInc', 'DataSystems', 'DesignHub', 'CloudSolutions'][i % 5],
+        location: ['Accra, Ghana', 'Lagos, Nigeria', 'Nairobi, Kenya', 'Cape Town, South Africa', 'London, UK'][i % 5],
+        sector: ['Technology', 'Finance', 'Healthcare', 'Education', 'Manufacturing'][i % 5],
+        experience_level: ['Entry Level', 'Mid Level', 'Senior Level'][i % 3],
+        salary: `$${(50000 + (i * 5000)).toLocaleString()}`,
+        job_description: `We are looking for a skilled professional to join our team. This position requires strong technical skills and excellent communication abilities. ${i + 1}`,
+        field: ['Software Development', 'Product Management', 'Data Science', 'Design', 'Infrastructure'][i % 5],
+        experience_length: `${i % 5 + 1}+ years`,
+        posted: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString(),
+        created_at: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString()
+      }))
 
-      const queryString = queryParams.toString()
-      const url = `https://dark-caldron-448714-u5.appspot.com/getjobs${queryString ? '?' + queryString : ''}`
-      
-      const response = await fetch(url)
-      const data = await response.json()
-      
-      if (data.success) {
-        setJobs(data.data || [])
-      } else {
-        throw new Error('Failed to fetch jobs')
-      }
+      setJobs(mockJobs)
     } catch (err) {
       setError(err.message || 'Failed to fetch jobs')
       toast.error('Failed to load job opportunities')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchUserApplications = async () => {
-    // Mock function - replace with actual API call
-    try {
-      setUserApplications([])
-    } catch (error) {
-      console.error('Error fetching applications:', error)
+      setSearchLoading(false)
     }
   }
 
   // Event handlers
   const handleSearch = () => {
-    setCurrentPage(1)
-    fetchJobs()
-  }
-
-  const applyFilters = () => {
-    setCurrentPage(1)
-    fetchJobs()
-  }
-
-  const applySorting = () => {
+    setSearchLoading(true)
     setCurrentPage(1)
     fetchJobs()
   }
@@ -267,10 +190,10 @@ const JobsPage = () => {
       location: '',
       country: '',
       sector: '',
-      experience_level: ''
+      experience_level: '',
+      salary_range: ''
     })
     setCurrentPage(1)
-    fetchJobs()
   }
 
   const clearAllFilters = () => {
@@ -290,8 +213,6 @@ const JobsPage = () => {
   }
 
   const openJobDetailsModal = (job) => {
-    setShowApplicationModal(false)
-    setSelectedJob(null)
     setViewingJob(job)
   }
 
@@ -300,115 +221,32 @@ const JobsPage = () => {
   }
 
   const openApplicationModal = (job) => {
-    setViewingJob(null)
     setSelectedJob(job)
-    setApplicationForm(prev => ({
-      ...prev,
-      jobId: job._id
-    }))
     setShowApplicationModal(true)
   }
 
   const closeApplicationModal = () => {
     setShowApplicationModal(false)
     setSelectedJob(null)
-    setApplicationForm({
-      jobId: '',
-      applicantDetails: {
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        address: '',
-        linkedin: '',
-        portfolio: ''
-      },
-      coverLetter: '',
-      skills: [],
-      experience: {
-        years: 0,
-        description: ''
-      }
-    })
-    setResumeFile(null)
-    setNewSkill('')
-    setApplicationErrors({})
   }
 
   const applyToJob = (job) => {
-    const existingApplication = userApplications.find(
-      app => app.jobId === job._id && app.status !== 'withdrawn'
-    )
-    
-    if (existingApplication) {
-      toast.error('You have already applied for this position')
-      return
-    }
-
     openApplicationModal(job)
   }
 
   const submitApplication = async (e) => {
     e.preventDefault()
     setApplicationLoading(true)
-    setApplicationErrors({})
 
     try {
-      // Mock submission - replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      toast.success('Application submitted successfully! We will review your submission and get back to you within 5-7 business days.')
+      toast.success('Application submitted successfully!')
       closeApplicationModal()
-      await fetchUserApplications()
     } catch (error) {
-      console.error('Error submitting application:', error)
-      toast.error('Failed to submit application. Please try again.')
+      toast.error('Failed to submit application')
     } finally {
       setApplicationLoading(false)
     }
-  }
-
-  const handleFileUpload = (event) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      setResumeFile(file)
-      setApplicationErrors(prev => ({ ...prev, resume: '' }))
-    }
-  }
-
-  const addSkill = () => {
-    if (newSkill.trim() && !applicationForm.skills.includes(newSkill.trim())) {
-      setApplicationForm(prev => ({
-        ...prev,
-        skills: [...prev.skills, newSkill.trim()]
-      }))
-      setNewSkill('')
-    }
-  }
-
-  const removeSkill = (index) => {
-    setApplicationForm(prev => ({
-      ...prev,
-      skills: prev.skills.filter((_, i) => i !== index)
-    }))
-  }
-
-  const hasAppliedToJob = (jobId) => {
-    return userApplications.some(app => app.jobId === jobId && app.status !== 'withdrawn')
-  }
-
-  const getApplyButtonText = (job) => {
-    if (hasAppliedToJob(job._id)) {
-      return 'Applied'
-    }
-    return 'Apply Now'
-  }
-
-  const getApplyButtonClass = (job) => {
-    if (hasAppliedToJob(job._id)) {
-      return 'bg-green-600 text-white px-4 py-2 rounded-xl cursor-default'
-    }
-    return 'bg-[#432DD7] text-white px-4 py-2 rounded-xl hover:bg-[#342299] transition-colors'
   }
 
   const formatDate = (dateString) => {
@@ -431,10 +269,18 @@ const JobsPage = () => {
     }
   }
 
+  const getExperienceColor = (level) => {
+    switch (level) {
+      case 'Entry Level': return 'bg-green-100 text-green-800'
+      case 'Mid Level': return 'bg-blue-100 text-blue-800'
+      case 'Senior Level': return 'bg-purple-100 text-purple-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
   // Effects
   useEffect(() => {
     fetchJobs()
-    fetchUserApplications()
   }, [])
 
   useEffect(() => {
@@ -443,219 +289,296 @@ const JobsPage = () => {
     }
   }, [filteredJobs.length, totalPages, currentPage])
 
+  // Skeleton Loader Component
+  const JobCardSkeleton = () => (
+    <div className="bg-white border border-gray-200 rounded-2xl p-6 animate-pulse">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1 space-y-2">
+          <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
+        <div className="h-6 bg-gray-200 rounded w-20"></div>
+      </div>
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center space-x-3">
+          <div className="h-4 bg-gray-200 rounded w-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="h-4 bg-gray-200 rounded w-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-24"></div>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="h-4 bg-gray-200 rounded w-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-28"></div>
+        </div>
+      </div>
+      <div className="h-12 bg-gray-200 rounded mb-4"></div>
+      <div className="flex justify-between items-center">
+        <div className="h-4 bg-gray-200 rounded w-20"></div>
+        <div className="flex space-x-2">
+          <div className="h-8 bg-gray-200 rounded w-8"></div>
+          <div className="h-8 bg-gray-200 rounded w-20"></div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            <div>
-              <h1 className="text-3xl font-bold text-[#432DD7]">Job Opportunities</h1>
-              <p className="text-gray-600 mt-1">
-                Discover your next <span className="font-semibold text-[#432DD7]">career opportunity</span>
-              </p>
-            </div>
+      {/* Hero Section */}
+      <div className="bg-gradient-to-br from-[#5C3AEB] via-[#5E43D7] to-[#7A59D7] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Find Your Dream Job
+            </h1>
+            <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+              Discover thousands of career opportunities from top companies worldwide. 
+              Your next career move starts here.
+            </p>
             
-            <div className="flex items-center space-x-4">
-              {/* Search Input */}
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto">
               <div className="relative">
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   type="text"
-                  placeholder="Search jobs..."
-                  className="w-72 pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-2xl focus:ring-4 focus:ring-[#432DD7]/20 focus:outline-none focus:border-[#432DD7] placeholder-gray-500 font-medium text-gray-700"
+                  placeholder="Job title, company, or keywords..."
+                  className="w-full pl-12 pr-32 py-4 bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 text-lg"
                 />
-                <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
-              </div>
-
-              {/* Filters Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2 px-4 py-3 bg-white border border-[#432DD7] text-[#432DD7] rounded-2xl hover:bg-[#432DD7] hover:text-white transition-colors"
-              >
-                <Filter className="w-4 h-4" />
-                <span>Filters</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-              
-              {/* Country Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Country</label>
-                <div className="relative">
-                  <select 
-                    value={filters.country} 
-                    onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
-                    className="w-full appearance-none bg-white border border-gray-300 rounded-2xl px-4 py-3 pl-12 text-sm font-medium text-gray-700 focus:ring-4 focus:ring-[#432DD7]/20 focus:outline-none focus:border-[#432DD7]"
-                  >
-                    <option value="">All Countries</option>
-                    {uniqueCountries.map(country => (
-                      <option key={country} value={country}>{country}</option>
-                    ))}
-                  </select>
-                  <Globe className="absolute left-4 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Location Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Location</label>
-                <div className="relative">
-                  <select 
-                    value={filters.location} 
-                    onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full appearance-none bg-white border border-gray-300 rounded-2xl px-4 py-3 pl-12 text-sm font-medium text-gray-700 focus:ring-4 focus:ring-[#432DD7]/20 focus:outline-none focus:border-[#432DD7]"
-                  >
-                    <option value="">All Locations</option>
-                    {uniqueLocations.map(location => (
-                      <option key={location} value={location}>{location}</option>
-                    ))}
-                  </select>
-                  <MapPin className="absolute left-4 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Sector Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Sector</label>
-                <div className="relative">
-                  <select 
-                    value={filters.sector} 
-                    onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))}
-                    className="w-full appearance-none bg-white border border-gray-300 rounded-2xl px-4 py-3 pl-12 text-sm font-medium text-gray-700 focus:ring-4 focus:ring-[#432DD7]/20 focus:outline-none focus:border-[#432DD7]"
-                  >
-                    <option value="">All Sectors</option>
-                    {uniqueSectors.map(sector => (
-                      <option key={sector} value={sector}>{sector}</option>
-                    ))}
-                  </select>
-                  <Building className="absolute left-4 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Experience Level Filter */}
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">Experience Level</label>
-                <div className="relative">
-                  <select 
-                    value={filters.experience_level} 
-                    onChange={(e) => setFilters(prev => ({ ...prev, experience_level: e.target.value }))}
-                    className="w-full appearance-none bg-white border border-gray-300 rounded-2xl px-4 py-3 pl-12 text-sm font-medium text-gray-700 focus:ring-4 focus:ring-[#432DD7]/20 focus:outline-none focus:border-[#432DD7]"
-                  >
-                    <option value="">All Levels</option>
-                    {uniqueExperienceLevels.map(level => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                  <Zap className="absolute left-4 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Clear Filters */}
-              <div className="flex items-end">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/70" />
                 <button
-                  onClick={clearFilters}
-                  className="w-full px-6 py-3 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-2xl hover:bg-gray-50 transition-colors"
+                  onClick={handleSearch}
+                  disabled={searchLoading}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-[#5C3AEB] px-6 py-2 rounded-xl font-semibold hover:bg-gray-100 disabled:opacity-50 transition-colors"
                 >
-                  Clear Filters
+                  {searchLoading ? 'Searching...' : 'Search'}
                 </button>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Stats Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-6">
-              <span className="font-bold text-gray-900">
-                {filteredJobs.length} job{filteredJobs.length !== 1 ? 's' : ''} found
-              </span>
-              <div className="h-4 w-px bg-gray-300"></div>
-              <div className="flex items-center space-x-2 text-gray-600">
-                <Clock className="w-4 h-4" />
-                <span>Updated {new Date().toLocaleDateString()}</span>
-              </div>
+      {/* Compact Categories Navigation */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-900">Browse Categories</h3>
+            <Link href="/categories" className="text-sm text-[#432DD7] hover:text-[#3525b8] font-medium">
+              View All Categories →
+            </Link>
+          </div>
+          
+          <div className="flex overflow-x-auto pb-2 gap-3 scrollbar-hide">
+            {[
+              { id: 'vehicles', name: '🚗 Vehicles', count: '12K+' },
+              { id: 'electronics', name: '📱 Electronics', count: '15K+' },
+              { id: 'property', name: '🏠 Property', count: '8K+' },
+              { id: 'fashion', name: '👕 Fashion', count: '7K+' },
+              { id: 'jobs', name: '💼 Jobs', count: '5K+' },
+              { id: 'services', name: '🔧 Services', count: '4K+' },
+              { id: 'furniture', name: '🛋️ Home', count: '6K+' },
+              { id: 'pets', name: '🐾 Pets', count: '3K+' },
+              { id: 'baby-kids', name: '🍼 Baby & Kids', count: '3K+' },
+              { id: 'sports', name: '⚽ Sports', count: '2K+' }
+            ].map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/shop?category=${cat.id}`}
+                className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-[#432DD7] hover:text-white rounded-lg border border-gray-200 hover:border-[#432DD7] transition-all text-sm font-medium whitespace-nowrap"
+              >
+                <span>{cat.name}</span>
+                <span className="text-xs opacity-75">{cat.count}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#5C3AEB]">{jobs.length}+</div>
+              <div className="text-sm text-gray-600">Active Jobs</div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <span className="font-medium text-gray-600">Sort by:</span>
-              <div className="relative">
-                <select 
-                  value={sortBy} 
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm font-medium text-gray-700 focus:ring-4 focus:ring-[#432DD7]/20 focus:outline-none focus:border-[#432DD7]"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="title">Job Title A-Z</option>
-                  <option value="company">Company A-Z</option>
-                </select>
-                <ChevronRight className="absolute right-2 top-2.5 w-4 h-4 text-gray-400 rotate-90 pointer-events-none" />
-              </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#5C3AEB]">50+</div>
+              <div className="text-sm text-gray-600">Companies</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#5C3AEB]">15+</div>
+              <div className="text-sm text-gray-600">Countries</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#5C3AEB]">24/7</div>
+              <div className="text-sm text-gray-600">Support</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filters Bar */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-colors ${
+                  showFilters 
+                    ? 'bg-[#5C3AEB] text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+              </button>
+              
+              <div className="hidden md:flex items-center gap-2">
+                <span className="text-sm text-gray-600">Sort by:</span>
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-white border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="title">Job Title A-Z</option>
+                  <option value="company">Company A-Z</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              Showing {filteredJobs.length} of {jobs.length} jobs
+            </div>
+          </div>
+
+          {/* Expanded Filters */}
+          {showFilters && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Country */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                  <select 
+                    value={filters.country} 
+                    onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                  >
+                    <option value="">All Countries</option>
+                    {uniqueCountries.map(country => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+                  <select 
+                    value={filters.location} 
+                    onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                  >
+                    <option value="">All Locations</option>
+                    {uniqueLocations.map(location => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sector */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Sector</label>
+                  <select 
+                    value={filters.sector} 
+                    onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                  >
+                    <option value="">All Sectors</option>
+                    {uniqueSectors.map(sector => (
+                      <option key={sector} value={sector}>{sector}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Experience */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Experience</label>
+                  <select 
+                    value={filters.experience_level} 
+                    onChange={(e) => setFilters(prev => ({ ...prev, experience_level: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                  >
+                    <option value="">All Levels</option>
+                    {uniqueExperienceLevels.map(level => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-end gap-2">
+                  <button
+                    onClick={clearFilters}
+                    className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-semibold"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Loading State */}
         {loading && (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4">
-            <div className="w-12 h-12 border-4 border-gray-200 border-t-[#432DD7] rounded-full animate-spin"></div>
-            <p className="text-gray-600 font-semibold text-lg">Discovering opportunities...</p>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <JobCardSkeleton key={i} />
+            ))}
           </div>
         )}
 
         {/* Error State */}
         {error && !loading && (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4 bg-red-50 rounded-3xl border border-red-200">
-            <div className="p-3 bg-red-100 rounded-full">
-              <X className="w-8 h-8 text-red-600" />
+          <div className="text-center py-12">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-8 max-w-md mx-auto">
+              <X className="w-12 h-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-red-700 mb-2">Failed to Load Jobs</h3>
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={fetchJobs}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
-            <h3 className="text-lg font-bold text-red-700">Error Loading Jobs</h3>
-            <p className="text-red-600 mb-4">{error}</p>
-            <button
-              onClick={fetchJobs}
-              className="px-6 py-3 bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors font-medium"
-            >
-              Try Again
-            </button>
           </div>
         )}
 
         {/* Empty State */}
         {!loading && !error && filteredJobs.length === 0 && (
           <div className="text-center py-12">
-            <div className="relative mx-auto w-24 h-24 mb-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl"></div>
-              <div className="relative z-10 w-full h-full flex items-center justify-center">
-                <Briefcase className="w-12 h-12 text-gray-400" />
-              </div>
-            </div>
+            <Briefcase className="w-24 h-24 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">No Jobs Found</h3>
-            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            <p className="text-gray-600 mb-6">
               {searchQuery || Object.values(filters).some(f => f) 
-                ? 'Try adjusting your search criteria or filters to find more opportunities.' 
-                : 'No job listings available at the moment. Check back soon for new opportunities!'}
+                ? 'Try adjusting your search criteria or filters' 
+                : 'No job listings available at the moment'}
             </p>
             {(searchQuery || Object.values(filters).some(f => f)) && (
               <button
                 onClick={clearAllFilters}
-                className="px-6 py-3 bg-[#432DD7] text-white rounded-2xl hover:bg-[#342299] transition-colors font-medium"
+                className="px-6 py-2 bg-[#5C3AEB] text-white rounded-lg hover:bg-[#342299] transition-colors"
               >
                 Clear All Filters
               </button>
@@ -665,276 +588,240 @@ const JobsPage = () => {
 
         {/* Jobs Grid */}
         {!loading && !error && filteredJobs.length > 0 && (
-          <div className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {paginatedJobs.map(job => (
-                <div key={job._id} className="group bg-white border border-gray-200 rounded-3xl p-6 hover:border-[#432DD7] hover:shadow-lg transition-all duration-300">
+                <div key={job._id} className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-[#5C3AEB] hover:shadow-lg transition-all duration-300">
                   
                   {/* Job Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-[#432DD7] transition-colors">
-                        {job.title || 'Untitled Position'}
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 group-hover:text-[#5C3AEB] transition-colors line-clamp-2">
+                        {job.title}
                       </h3>
-                      <p className="text-[#432DD7] font-semibold">{job.employer || 'Company Name'}</p>
+                      <p className="text-[#5C3AEB] font-semibold truncate">{job.employer}</p>
                     </div>
-                    {job.salary && (
-                      <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                        {job.salary}
-                      </div>
-                    )}
+                    <button
+                      onClick={() => saveJob(job)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        savedJobs.includes(job._id) 
+                          ? 'text-red-500 bg-red-50' 
+                          : 'text-gray-400 hover:text-red-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Heart 
+                        fill={savedJobs.includes(job._id) ? 'currentColor' : 'none'} 
+                        className="w-4 h-4" 
+                      />
+                    </button>
                   </div>
 
                   {/* Job Details */}
-                  <div className="space-y-2 mb-4">
-                    {job.location && (
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{job.location}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Building className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{job.sector}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Target className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getExperienceColor(job.experience_level)}`}>
+                        {job.experience_level}
+                      </span>
+                    </div>
+                    {job.salary && (
                       <div className="flex items-center text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 mr-3 flex-shrink-0" />
-                        <span>{job.location}</span>
-                        {extractCountryFromLocation(job.location) && (
-                          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                            {extractCountryFromLocation(job.location)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {job.sector && (
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Building className="w-4 h-4 mr-3 flex-shrink-0" />
-                        <span>{job.sector}</span>
-                      </div>
-                    )}
-                    {job.experience_level && (
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Zap className="w-4 h-4 mr-3 flex-shrink-0" />
-                        <span>{job.experience_level}</span>
-                      </div>
-                    )}
-                    {job.posted && (
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Clock className="w-4 h-4 mr-3 flex-shrink-0" />
-                        <span>Posted {formatDate(job.posted)}</span>
+                        <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="font-semibold text-green-600">{job.salary}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Job Description Preview */}
-                  {job.job_description && (
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-600 line-clamp-3">{job.job_description}</p>
-                    </div>
-                  )}
-
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {job.field && (
-                      <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg">
-                        {job.field}
-                      </span>
-                    )}
-                    {job.experience_length && (
-                      <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg">
-                        {job.experience_length}
-                      </span>
-                    )}
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed">
+                      {job.job_description}
+                    </p>
                   </div>
 
-                  {/* Card Footer */}
+                  {/* Posted Date */}
+                  <div className="flex items-center text-xs text-gray-500 mb-4">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Posted {formatDate(job.posted)}
+                  </div>
+
+                  {/* Actions */}
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => openJobDetailsModal(job)}
-                      className="flex items-center text-sm font-semibold text-[#432DD7] hover:text-[#342299] transition-colors space-x-2"
+                      className="text-sm font-semibold text-[#5C3AEB] hover:text-[#342299] transition-colors flex items-center gap-1"
                     >
-                      <span>View Details</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      View Details
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                     
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={() => saveJob(job)}
-                        className={`p-2 rounded-full transition-colors ${
-                          savedJobs.includes(job._id) 
-                            ? 'text-red-500' 
-                            : 'text-gray-400 hover:text-red-500'
-                        }`}
-                        title={savedJobs.includes(job._id) ? 'Remove from saved' : 'Save job'}
-                      >
-                        <Heart 
-                          fill={savedJobs.includes(job._id) ? 'currentColor' : 'none'} 
-                          className="w-4 h-4" 
-                        />
-                      </button>
-                      
-                      <button
-                        onClick={() => applyToJob(job)}
-                        className={getApplyButtonClass(job)}
-                        disabled={hasAppliedToJob(job._id)}
-                        title={hasAppliedToJob(job._id) ? 'You have already applied for this position' : 'Apply for this position'}
-                      >
-                        {getApplyButtonText(job)}
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => applyToJob(job)}
+                      className="px-4 py-2 bg-[#5C3AEB] text-white text-sm font-semibold rounded-lg hover:bg-[#342299] transition-colors"
+                    >
+                      Apply Now
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Pagination */}
-            {filteredJobs.length > jobsPerPage && (
-              <div className="flex items-center justify-between mt-8 p-6 bg-white rounded-3xl border border-gray-200">
-                <div className="text-sm font-medium text-gray-600">
-                  Showing {((currentPage - 1) * jobsPerPage) + 1} to {Math.min(currentPage * jobsPerPage, filteredJobs.length)} of {filteredJobs.length} jobs
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-8">
+                <div className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setCurrentPage(prev => prev - 1)}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    <span>Previous</span>
+                    Previous
                   </button>
                   
-                  <div className="flex items-center space-x-1">
-                    {visiblePages.map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-2 text-sm font-bold rounded-xl transition-colors ${
-                          page === currentPage
-                            ? 'bg-[#432DD7] text-white'
-                            : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const page = currentPage <= 3 ? i + 1 : 
+                                 currentPage >= totalPages - 2 ? totalPages - 4 + i :
+                                 currentPage - 2 + i
+                      return page > 0 && page <= totalPages ? (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                            page === currentPage
+                              ? 'bg-[#5C3AEB] text-white'
+                              : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ) : null
+                    })}
                   </div>
                   
                   <button
-                    onClick={() => setCurrentPage(prev => prev + 1)}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>Next</span>
+                    Next
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
 
       {/* Job Details Modal */}
       {viewingJob && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={closeJobDetailsModal}>
-          <div className="relative bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-8 border-b border-gray-200">
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900">{viewingJob.title || 'Job Details'}</h3>
-                <p className="text-lg font-semibold text-[#432DD7]">{viewingJob.employer || 'Company'}</p>
-                <div className="w-16 h-1 bg-gradient-to-r from-[#432DD7] to-purple-500 rounded-full"></div>
-              </div>
-              <button 
-                onClick={closeJobDetailsModal} 
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="h-96 overflow-y-auto p-8 space-y-8">
-              
-              {/* Basic Info */}
-              <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 space-y-4">
-                <h4 className="text-lg font-bold text-gray-900">Job Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {viewingJob.location && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <span className="font-semibold text-gray-700">Location:</span>
-                      <span className="text-gray-600">{viewingJob.location}</span>
-                    </div>
-                  )}
-                  {viewingJob.sector && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <Building className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <span className="font-semibold text-gray-700">Sector:</span>
-                      <span className="text-gray-600">{viewingJob.sector}</span>
-                    </div>
-                  )}
-                  {viewingJob.experience_level && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <Zap className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <span className="font-semibold text-gray-700">Experience Level:</span>
-                      <span className="text-gray-600">{viewingJob.experience_level}</span>
-                    </div>
-                  )}
-                  {viewingJob.salary && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <span className="text-gray-500 flex-shrink-0">💰</span>
-                      <span className="font-semibold text-gray-700">Salary:</span>
-                      <span className="text-gray-600">{viewingJob.salary}</span>
-                    </div>
-                  )}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">{viewingJob.title}</h2>
+                  <p className="text-lg text-[#5C3AEB] font-semibold mt-1">{viewingJob.employer}</p>
                 </div>
+                <button 
+                  onClick={closeJobDetailsModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-
-              {/* Job Description */}
-              {viewingJob.job_description && (
-                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4">Job Description</h4>
-                  <div className="text-gray-700 leading-relaxed text-sm space-y-3">
-                    <p className="whitespace-pre-line">{viewingJob.job_description}</p>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="grid gap-6">
+                {/* Job Details */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="text-sm text-gray-600">Location</div>
+                      <div className="font-semibold">{viewingJob.location}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Building className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="text-sm text-gray-600">Sector</div>
+                      <div className="font-semibold">{viewingJob.sector}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="text-sm text-gray-600">Experience</div>
+                      <div className="font-semibold">{viewingJob.experience_level}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="text-sm text-gray-600">Salary</div>
+                      <div className="font-semibold text-green-600">{viewingJob.salary}</div>
+                    </div>
                   </div>
                 </div>
-              )}
 
-              {/* Additional Details */}
-              <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200">
-                <h4 className="text-lg font-bold text-gray-900 mb-4">Additional Information</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {viewingJob.field && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <span className="font-semibold text-gray-700">Field:</span>
-                      <span className="text-gray-600">{viewingJob.field}</span>
-                    </div>
-                  )}
-                  {viewingJob.experience_length && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <span className="font-semibold text-gray-700">Experience Required:</span>
-                      <span className="text-gray-600">{viewingJob.experience_length}</span>
-                    </div>
-                  )}
-                  {viewingJob.posted && (
-                    <div className="flex items-center space-x-3 text-sm">
-                      <Clock className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <span className="font-semibold text-gray-700">Posted:</span>
-                      <span className="text-gray-600">{formatDate(viewingJob.posted)}</span>
-                    </div>
-                  )}
+                {/* Job Description */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Job Description</h3>
+                  <div className="prose prose-gray max-w-none">
+                    <p className="text-gray-700 leading-relaxed">{viewingJob.job_description}</p>
+                  </div>
+                </div>
+
+                {/* Requirements */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Requirements</h3>
+                  <ul className="space-y-2 text-gray-700">
+                    <li className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-[#5C3AEB] flex-shrink-0" />
+                      {viewingJob.experience_length} of experience in related field
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-[#5C3AEB] flex-shrink-0" />
+                      Strong communication and teamwork skills
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-[#5C3AEB] flex-shrink-0" />
+                      Relevant certifications or degrees preferred
+                    </li>
+                  </ul>
                 </div>
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex items-center justify-between">
                 <button
                   onClick={closeJobDetailsModal}
-                  className="px-8 py-3 bg-white text-gray-700 font-bold rounded-2xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                  className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Close
                 </button>
                 <button
                   onClick={() => applyToJob(viewingJob)}
-                  className={getApplyButtonClass(viewingJob)}
-                  disabled={hasAppliedToJob(viewingJob._id)}
+                  className="px-6 py-2 bg-[#5C3AEB] text-white rounded-lg hover:bg-[#342299] transition-colors font-semibold"
                 >
-                  {getApplyButtonText(viewingJob)}
+                  Apply for this Position
                 </button>
               </div>
             </div>
@@ -942,232 +829,78 @@ const JobsPage = () => {
         </div>
       )}
 
-      {/* Job Application Modal */}
+      {/* Application Modal */}
       {showApplicationModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={closeApplicationModal}>
-          <div className="relative bg-white rounded-3xl max-w-5xl w-full max-h-[95vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-8 border-b border-gray-200">
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-gray-900">Apply for Position</h3>
-                <p className="text-lg font-semibold text-[#432DD7]">{selectedJob?.title || 'Position'} at {selectedJob?.employer || 'Company'}</p>
-                <div className="w-16 h-1 bg-gradient-to-r from-[#432DD7] to-purple-500 rounded-full"></div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold">Apply for {selectedJob?.title}</h2>
+                  <p className="text-[#5C3AEB] font-semibold">{selectedJob?.employer}</p>
+                </div>
+                <button 
+                  onClick={closeApplicationModal}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button 
-                onClick={closeApplicationModal} 
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
-
-            {/* Modal Content */}
-            <div className="h-96 overflow-y-auto p-8">
-              <form onSubmit={submitApplication} className="space-y-6">
-                
-                {/* Personal Information Section */}
-                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 space-y-4">
-                  <h4 className="flex items-center space-x-3 text-lg font-bold text-gray-900">
-                    <User className="w-5 h-5 text-[#432DD7]" />
-                    Personal Information
-                  </h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">First Name *</label>
-                      <input
-                        value={applicationForm.applicantDetails.firstName}
-                        onChange={(e) => setApplicationForm(prev => ({
-                          ...prev,
-                          applicantDetails: { ...prev.applicantDetails, firstName: e.target.value }
-                        }))}
-                        type="text"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-colors"
-                        placeholder="Enter your first name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">Last Name *</label>
-                      <input
-                        value={applicationForm.applicantDetails.lastName}
-                        onChange={(e) => setApplicationForm(prev => ({
-                          ...prev,
-                          applicantDetails: { ...prev.applicantDetails, lastName: e.target.value }
-                        }))}
-                        type="text"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-colors"
-                        placeholder="Enter your last name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">Email Address *</label>
-                      <input
-                        value={applicationForm.applicantDetails.email}
-                        onChange={(e) => setApplicationForm(prev => ({
-                          ...prev,
-                          applicantDetails: { ...prev.applicantDetails, email: e.target.value }
-                        }))}
-                        type="email"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-colors"
-                        placeholder="Enter your email"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700">Phone Number *</label>
-                      <input
-                        value={applicationForm.applicantDetails.phone}
-                        onChange={(e) => setApplicationForm(prev => ({
-                          ...prev,
-                          applicantDetails: { ...prev.applicantDetails, phone: e.target.value }
-                        }))}
-                        type="tel"
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-colors"
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
+            
+            <form onSubmit={submitApplication} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Full Name</label>
+                  <input 
+                    type="text" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Email</label>
+                  <input 
+                    type="email" 
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Resume/CV</label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Drag and drop or click to upload</p>
+                    <input type="file" className="hidden" />
                   </div>
                 </div>
-
-                {/* Resume Upload Section */}
-                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 space-y-4">
-                  <h4 className="flex items-center space-x-3 text-lg font-bold text-gray-900">
-                    <FileText className="w-5 h-5 text-[#432DD7]" />
-                    Resume/CV
-                  </h4>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">Upload Resume *</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#432DD7] hover:bg-blue-50/50 transition-colors">
-                      <input
-                        type="file"
-                        id="resume-upload"
-                        accept=".pdf,.doc,.docx"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                      <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center justify-center">
-                        <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                        <span className="block text-sm font-medium text-gray-700 mb-1">
-                          {resumeFile?.name || 'Click to upload resume'}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          PDF, DOC, or DOCX (Max 5MB)
-                        </span>
-                      </label>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Cover Letter</label>
+                  <textarea 
+                    rows={4}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                    placeholder="Tell us why you're a great fit for this position..."
+                  />
                 </div>
-
-                {/* Skills Section */}
-                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 space-y-4">
-                  <h4 className="flex items-center space-x-3 text-lg font-bold text-gray-900">
-                    <Zap className="w-5 h-5 text-[#432DD7]" />
-                    Skills
-                  </h4>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">Add Skills</label>
-                    <div className="flex space-x-2">
-                      <input
-                        value={newSkill}
-                        onChange={(e) => setNewSkill(e.target.value)}
-                        type="text"
-                        className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-colors"
-                        placeholder="Enter a skill"
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                      />
-                      <button
-                        type="button"
-                        onClick={addSkill}
-                        className="px-4 py-2 bg-[#432DD7] text-white rounded-lg hover:bg-[#342299] transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    
-                    {applicationForm.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {applicationForm.skills.map((skill, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full border border-blue-200"
-                          >
-                            {skill}
-                            <button
-                              type="button"
-                              onClick={() => removeSkill(index)}
-                              className="ml-2 text-blue-600 hover:text-blue-800"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Cover Letter Section */}
-                <div className="p-6 bg-gray-50 rounded-2xl border border-gray-200 space-y-4">
-                  <h4 className="flex items-center space-x-3 text-lg font-bold text-gray-900">
-                    <MessageSquare className="w-5 h-5 text-[#432DD7]" />
-                    Cover Letter
-                  </h4>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700">Cover Letter (Optional)</label>
-                    <textarea
-                      value={applicationForm.coverLetter}
-                      onChange={(e) => setApplicationForm(prev => ({
-                        ...prev,
-                        coverLetter: e.target.value
-                      }))}
-                      rows="6"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-colors"
-                      placeholder="Write a personalized cover letter for this position..."
-                      maxLength="5000"
-                    />
-                    <div className="text-xs text-gray-500 text-right">
-                      {applicationForm.coverLetter.length}/5000 characters
-                    </div>
-                  </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={closeApplicationModal}
-                    className="px-8 py-3 bg-white text-gray-700 font-bold rounded-2xl border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    disabled={applicationLoading}
-                  >
-                    Cancel
-                  </button>
-                  
-                  <button
-                    type="submit"
-                    className="flex items-center justify-center px-8 py-3 bg-[#432DD7] text-white font-bold rounded-2xl hover:bg-[#342299] focus:outline-none focus:ring-4 focus:ring-[#432DD7]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    disabled={applicationLoading}
-                  >
-                    {applicationLoading ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Submitting...</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2">
-                        <Send className="w-4 h-4" />
-                        <span>Submit Application</span>
-                      </div>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+              </div>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeApplicationModal}
+                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={applicationLoading}
+                  className="flex-1 px-4 py-2 bg-[#5C3AEB] text-white rounded-lg hover:bg-[#342299] disabled:opacity-50 transition-colors font-semibold"
+                >
+                  {applicationLoading ? 'Submitting...' : 'Submit Application'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

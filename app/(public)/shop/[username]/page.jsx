@@ -33,7 +33,7 @@ export default function StoreShop() {
                     <Image
                         src={storeInfo.logo}
                         alt={storeInfo.name}
-                        className="size-32 sm:size-38 object-cover border-2 border-slate-100 rounded-md"
+                        className="size-32 sm:size-38 object-cover  border-slate-100 rounded-md"
                         width={200}
                         height={200}
                     />

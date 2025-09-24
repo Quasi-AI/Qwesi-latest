@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import LoginModal from '@/modals/LoginModal'
+import SignupModal from '@/modals/SignupModal'
 
 const Navbar = () => {
     const router = useRouter();
@@ -13,6 +15,8 @@ const Navbar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
+    const [showLogin, setShowLogin] = useState(false)
+    const [showSignup, setShowSignup] = useState(false)
     
     const cartCount = useSelector(state => state.cart.total)
 
@@ -55,9 +59,31 @@ const Navbar = () => {
         setMobileMenuOpen(false)
     }
 
+    // Modal handlers
+    const handleLoginClick = () => {
+        setShowLogin(true)
+        setMobileMenuOpen(false)
+    }
+
+    const handleSignupClick = () => {
+        setShowSignup(true)
+        setMobileMenuOpen(false)
+    }
+
+    const switchToSignup = () => {
+        setShowLogin(false)
+        setShowSignup(true)
+    }
+
+    const switchToLogin = () => {
+        setShowSignup(false)
+        setShowLogin(true)
+    }
+
     const navLinks = [
         { href: '/', label: 'Home' },
         { href: '/shop', label: 'Shop' },
+        { href: '/scholarships', label: 'Scholarships' },
         { href: '/about', label: 'About' },
         { href: '/contact', label: 'Contact' },
     ]
@@ -91,10 +117,10 @@ const Navbar = () => {
                                 <Link 
                                     key={link.href}
                                     href={link.href}
-                                    className="text-gray-700 hover:text-[#432DD7] font-medium transition-colors duration-200 relative group"
+                                    className="text-gray-700 hover:text-[#5C3AEB] font-medium transition-colors duration-200 relative group"
                                 >
                                     {link.label}
-                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#432DD7] transition-all duration-300 group-hover:w-full"></span>
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#5C3AEB] transition-all duration-300 group-hover:w-full"></span>
                                 </Link>
                             ))}
                         </div>
@@ -102,7 +128,7 @@ const Navbar = () => {
                         {/* Desktop Search Bar */}
                         <div className="hidden xl:block">
                             <form onSubmit={handleSearch} className="relative">
-                                <div className="flex items-center w-80 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-full border border-gray-200 focus-within:border-[#432DD7] focus-within:ring-2 focus-within:ring-[#432DD7]/20">
+                                <div className="flex items-center w-80 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-full border border-gray-200 focus-within:border-[#5C3AEB] focus-within:ring-2 focus-within:ring-[#5C3AEB]/20">
                                     <Search size={20} className="text-gray-400 ml-4" />
                                     <input 
                                         className="w-full bg-transparent outline-none px-4 py-3 text-sm placeholder-gray-500" 
@@ -129,7 +155,7 @@ const Navbar = () => {
                             {/* Search Toggle for medium screens */}
                             <button 
                                 onClick={toggleSearch}
-                                className="xl:hidden p-2 text-gray-600 hover:text-[#432DD7] hover:bg-gray-50 rounded-full transition-all duration-200"
+                                className="xl:hidden p-2 text-gray-600 hover:text-[#5C3AEB] hover:bg-gray-50 rounded-full transition-all duration-200"
                             >
                                 <Search size={20} />
                             </button>
@@ -137,19 +163,22 @@ const Navbar = () => {
                             {/* Cart */}
                             <Link 
                                 href="/cart" 
-                                className="relative flex items-center space-x-2 text-gray-700 hover:text-[#432DD7] transition-colors duration-200 p-2 hover:bg-gray-50 rounded-full"
+                                className="relative flex items-center space-x-2 text-gray-700 hover:text-[#5C3AEB] transition-colors duration-200 p-2 hover:bg-gray-50 rounded-full"
                             >
                                 <ShoppingCart size={20} />
                                 <span className="hidden xl:inline font-medium">Cart</span>
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-[#432DD7] text-white text-xs font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center animate-pulse">
+                                    <span className="absolute -top-1 -right-1 bg-[#5C3AEB] text-white text-xs font-bold min-w-[20px] h-5 rounded-full flex items-center justify-center animate-pulse">
                                         {cartCount > 99 ? '99+' : cartCount}
                                     </span>
                                 )}
                             </Link>
 
                             {/* Login Button */}
-                            <button className="bg-[#432DD7] hover:bg-[#3525b8] text-white px-6 py-2.5 rounded-full font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 flex items-center space-x-2">
+                            <button 
+                                onClick={handleLoginClick}
+                                className="bg-[#5C3AEB] hover:bg-[#3525b8] text-white px-6 py-2.5 rounded-full font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 flex items-center space-x-2"
+                            >
                                 <User size={18} />
                                 <span>Login</span>
                             </button>
@@ -162,8 +191,8 @@ const Navbar = () => {
                                 onClick={toggleSearch}
                                 className={`p-2 rounded-full transition-all duration-200 ${
                                     searchOpen 
-                                        ? 'bg-[#432DD7] text-white shadow-lg' 
-                                        : 'text-gray-600 hover:text-[#432DD7] hover:bg-gray-50'
+                                        ? 'bg-[#5C3AEB] text-white shadow-lg' 
+                                        : 'text-gray-600 hover:text-[#5C3AEB] hover:bg-gray-50'
                                 }`}
                             >
                                 <Search size={20} />
@@ -172,11 +201,11 @@ const Navbar = () => {
                             {/* Mobile Cart */}
                             <Link 
                                 href="/cart" 
-                                className="relative p-2 text-gray-600 hover:text-[#432DD7] hover:bg-gray-50 rounded-full transition-all duration-200"
+                                className="relative p-2 text-gray-600 hover:text-[#5C3AEB] hover:bg-gray-50 rounded-full transition-all duration-200"
                             >
                                 <ShoppingCart size={20} />
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-[#432DD7] text-white text-xs font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 bg-[#5C3AEB] text-white text-xs font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center">
                                         {cartCount > 99 ? '99+' : cartCount}
                                     </span>
                                 )}
@@ -187,8 +216,8 @@ const Navbar = () => {
                                 onClick={toggleMobileMenu}
                                 className={`mobile-menu-container p-2 rounded-full transition-all duration-200 ${
                                     mobileMenuOpen 
-                                        ? 'bg-[#432DD7] text-white shadow-lg' 
-                                        : 'text-gray-600 hover:text-[#432DD7] hover:bg-gray-50'
+                                        ? 'bg-[#5C3AEB] text-white shadow-lg' 
+                                        : 'text-gray-600 hover:text-[#5C3AEB] hover:bg-gray-50'
                                 }`}
                             >
                                 <div className="relative">
@@ -215,7 +244,7 @@ const Navbar = () => {
                     <div className="lg:xl:hidden border-t border-gray-200 bg-white">
                         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
                             <form onSubmit={handleSearch} className="relative">
-                                <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 focus-within:border-[#432DD7] focus-within:ring-2 focus-within:ring-[#432DD7]/20">
+                                <div className="flex items-center bg-gray-50 rounded-full border border-gray-200 focus-within:border-[#5C3AEB] focus-within:ring-2 focus-within:ring-[#5C3AEB]/20">
                                     <Search size={20} className="text-gray-400 ml-4" />
                                     <input 
                                         className="w-full bg-transparent outline-none px-4 py-3 text-sm placeholder-gray-500" 
@@ -252,7 +281,7 @@ const Navbar = () => {
                                     key={link.href}
                                     href={link.href}
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className={`block text-lg font-medium text-gray-700 hover:text-[#432DD7] hover:bg-gray-50 transition-all duration-200 py-3 px-4 rounded-lg transform ${
+                                    className={`block text-lg font-medium text-gray-700 hover:text-[#5C3AEB] hover:bg-gray-50 transition-all duration-200 py-3 px-4 rounded-lg transform ${
                                         mobileMenuOpen 
                                             ? 'translate-x-0 opacity-100' 
                                             : 'translate-x-4 opacity-0'
@@ -275,11 +304,8 @@ const Navbar = () => {
                                 : 'translate-y-4 opacity-0'
                         }`} style={{ transitionDelay: mobileMenuOpen ? '200ms' : '0ms' }}>
                             <button 
-                                onClick={() => {
-                                    setMobileMenuOpen(false)
-                                    // Add login logic here
-                                }}
-                                className="w-full bg-[#432DD7] hover:bg-[#3525b8] text-white py-3 px-6 rounded-full font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+                                onClick={handleLoginClick}
+                                className="w-full bg-[#5C3AEB] hover:bg-[#3525b8] text-white py-3 px-6 rounded-full font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
                             >
                                 <User size={18} />
                                 <span>Login</span>
@@ -287,13 +313,12 @@ const Navbar = () => {
                             
                             <div className="text-center text-sm text-gray-500">
                                 <span>New customer? </span>
-                                <Link 
-                                    href="/register" 
-                                    className="text-[#432DD7] hover:underline font-medium"
-                                    onClick={() => setMobileMenuOpen(false)}
+                                <button 
+                                    onClick={handleSignupClick}
+                                    className="text-[#5C3AEB] hover:underline font-medium"
                                 >
                                     Create an account
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -302,6 +327,20 @@ const Navbar = () => {
 
             {/* Spacer to prevent content from hiding behind fixed navbar */}
             <div className="h-16 lg:h-20"></div>
+
+            {/* Login Modal */}
+            <LoginModal 
+                isOpen={showLogin}
+                onClose={() => setShowLogin(false)}
+                onSwitchToSignup={switchToSignup}
+            />
+
+            {/* Signup Modal */}
+            <SignupModal 
+                isOpen={showSignup}
+                onClose={() => setShowSignup(false)}
+                onSwitchToLogin={switchToLogin}
+            />
         </>
     )
 }

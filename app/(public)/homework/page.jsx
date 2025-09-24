@@ -236,7 +236,7 @@ export default function HomeworkHelp() {
                                 onClick={() => setSelectedSubject(null)}
                                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                                     selectedSubject === null 
-                                        ? 'bg-[#432DD7] text-white border-[#432DD7] shadow-lg' 
+                                        ? 'bg-[#5C3AEB] text-white border-[#5C3AEB] shadow-lg' 
                                         : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'
                                 }`}
                             >
@@ -250,7 +250,7 @@ export default function HomeworkHelp() {
                                         onClick={() => setSelectedSubject(subject.name)}
                                         className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${
                                             selectedSubject === subject.name 
-                                                ? 'bg-[#432DD7] text-white border-[#432DD7] shadow-lg' 
+                                                ? 'bg-[#5C3AEB] text-white border-[#5C3AEB] shadow-lg' 
                                                 : `${subject.color} hover:shadow-md border`
                                         }`}
                                     >
@@ -279,7 +279,7 @@ export default function HomeworkHelp() {
                     {/* Chat Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-100">
                         <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-[#432DD7] rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-[#5C3AEB] rounded-full flex items-center justify-center">
                                 <Bot className="w-6 h-6 text-white" />
                             </div>
                             <div>
@@ -311,7 +311,7 @@ export default function HomeworkHelp() {
                                         ? 'bg-gray-600' 
                                         : message.error 
                                         ? 'bg-red-100'
-                                        : 'bg-[#432DD7]'
+                                        : 'bg-[#5C3AEB]'
                                 }`}>
                                     {message.role === 'user' 
                                         ? <User size={20} className="text-white" /> 
@@ -322,7 +322,7 @@ export default function HomeworkHelp() {
                                 <div className="flex-1 max-w-3xl">
                                     <div className={`p-4 rounded-2xl ${
                                         message.role === 'user'
-                                            ? 'bg-[#432DD7] text-white rounded-tr-md'
+                                            ? 'bg-[#5C3AEB] text-white rounded-tr-md'
                                             : message.error
                                             ? 'bg-red-50 text-red-800 border border-red-200 rounded-tl-md'
                                             : 'bg-gray-100 text-gray-800 rounded-tl-md'
@@ -404,7 +404,7 @@ export default function HomeworkHelp() {
                         {/* Loading State */}
                         {isLoading && (
                             <div className="flex items-start gap-4">
-                                <div className="flex-shrink-0 w-10 h-10 bg-[#432DD7] rounded-full flex items-center justify-center">
+                                <div className="flex-shrink-0 w-10 h-10 bg-[#5C3AEB] rounded-full flex items-center justify-center">
                                     <Bot size={20} className="text-white" />
                                 </div>
                                 <div className="flex-1 p-4 rounded-2xl bg-gray-100 text-gray-700 rounded-tl-md">
@@ -423,7 +423,7 @@ export default function HomeworkHelp() {
                     {showQuickActions && (
                         <div className="border-t border-gray-100 p-4">
                             <div className="flex items-center mb-3">
-                                <Star className="w-4 h-4 text-[#432DD7] mr-2" />
+                                <Star className="w-4 h-4 text-[#5C3AEB] mr-2" />
                                 <span className="text-sm font-medium text-gray-700">Quick Start</span>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -431,9 +431,9 @@ export default function HomeworkHelp() {
                                     <button
                                         key={index}
                                         onClick={() => handleQuickAction(action)}
-                                        className="text-left p-3 text-sm border border-gray-200 rounded-lg hover:border-[#432DD7] hover:bg-blue-50 transition-all duration-200 group"
+                                        className="text-left p-3 text-sm border border-gray-200 rounded-lg hover:border-[#5C3AEB] hover:bg-blue-50 transition-all duration-200 group"
                                     >
-                                        <span className="text-gray-700 group-hover:text-[#432DD7]">
+                                        <span className="text-gray-700 group-hover:text-[#5C3AEB]">
                                             {action.text}
                                         </span>
                                     </button>
@@ -454,7 +454,7 @@ export default function HomeworkHelp() {
                                 className="hidden"
                             />
                             <div 
-                                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#432DD7] transition-colors cursor-pointer"
+                                className=" border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5C3AEB] transition-colors cursor-pointer"
                                 onClick={() => fileInputRef.current?.click()}
                             >
                                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -508,7 +508,7 @@ export default function HomeworkHelp() {
                                     onClick={() => setShowFileUpload(!showFileUpload)}
                                     className={`flex-shrink-0 p-3 rounded-xl transition-all duration-200 ${
                                         showFileUpload || uploadedFiles.length > 0
-                                            ? 'bg-[#432DD7] text-white shadow-lg'
+                                            ? 'bg-[#5C3AEB] text-white shadow-lg'
                                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                                     title="Attach files"
@@ -529,7 +529,7 @@ export default function HomeworkHelp() {
                                             }
                                         }}
                                         placeholder="Ask me anything about your homework..."
-                                        className="w-full p-4 pr-12 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#432DD7]/20 focus:border-[#432DD7] transition-all duration-200"
+                                        className="w-full p-4 pr-12 border border-gray-300 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]/20 focus:border-[#5C3AEB] transition-all duration-200"
                                         rows="1"
                                         style={{ minHeight: '56px', maxHeight: '120px' }}
                                     />
@@ -541,7 +541,7 @@ export default function HomeworkHelp() {
                                     disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
                                     className={`flex-shrink-0 px-6 py-4 rounded-xl flex items-center gap-2 font-medium transition-all duration-200 ${
                                         (input.trim() || uploadedFiles.length > 0) && !isLoading
-                                            ? 'bg-[#432DD7] hover:bg-[#3525b8] text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                                            ? 'bg-[#5C3AEB] hover:bg-[#3525b8] text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     }`}
                                 >
