@@ -1,10 +1,11 @@
 'use client'
-import { dummyAdminDashboardData } from "@/assets/assets"
 import Loading from "@/components/Loading"
 import OrdersAreaChart from "@/components/OrdersAreaChart"
 import { CircleDollarSignIcon, ShoppingBasketIcon, StoreIcon, TagsIcon, TrendingUp, Users, BarChart3 } from "lucide-react"
 import { useEffect, useState } from "react"
 import PageHeader from '@/components/dashboard/PageHeader'
+import { API_ROUTES } from '@/lib/apiRoutes'
+import { authFetch } from '@/lib/auth'
 
 export default function AdminDashboard() {
 
@@ -18,6 +19,26 @@ export default function AdminDashboard() {
         stores: 0,
         allOrders: [],
     })
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const response = await authFetch(API_ROUTES.DASHBOARD_SUMMARY)
+                if (response.ok) {
+                    const data = await response.json()
+                    setDashboardData(data)
+                }
+            } catch (error) {
+                console.error('Failed to fetch dashboard data:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchDashboardData()
+    }, [])
+
+    if (loading) return <Loading />
 
     const dashboardCardsData = [
         { 
@@ -49,17 +70,6 @@ export default function AdminDashboard() {
             bgGradient: 'from-[#8B5CF6]/10 to-[#7C3AED]/10'
         },
     ]
-
-    const fetchDashboardData = async () => {
-        setDashboardData(dummyAdminDashboardData)
-        setLoading(false)
-    }
-
-    useEffect(() => {
-        fetchDashboardData()
-    }, [])
-
-    if (loading) return <Loading />
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 sm:p-6">
@@ -125,7 +135,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white/60 backdrop-blur-sm border border-gray-200/60 rounded-xl p-4 text-center">
                     <BarChart3 className="w-8 h-8 text-[#FF6B6B] mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 font-medium">Conversion</p>
+                    <p className="text-sm text-gray-600 font-medium">Conversion Rate</p>
                     <p className="text-lg font-bold text-[#FF6B6B]">3.2%</p>
                 </div>
             </div>

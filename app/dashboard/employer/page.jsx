@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import Loading from "@/components/Loading"
 import toast from "react-hot-toast"
 import {
@@ -15,89 +15,380 @@ import {
   Building,
   Mail,
   Phone,
-  BadgeCheck
+  BadgeCheck,
+  MapPin,
+  Calendar,
+  ExternalLink,
+  Download,
+  MessageSquare,
+  Trash2,
+  MoreHorizontal,
+  Star,
+  Building2,
+  Globe,
+  FileText,
+  UserCheck,
+  AlertTriangle,
+  ChevronDown,
+  Briefcase,
+  User
 } from "lucide-react"
+import { API_ROUTES } from '@/lib/apiRoutes'
+import { useAuthStore } from '@/stores/authStore'
+import CreateEmployerModal from '@/modals/CreateEmployerModal'
+import EditEmployerModal from '@/modals/EditEmployerModal'
+import EmployerDetailModal from '@/modals/EmployerDetailModal'
+import ApprovalModal from '@/modals/ApprovalModal'
+import DeleteConfirmModal from '@/modals/DeleteConfirmModal'
 
-export default function AdminEmployers() {
+export default function AdminEmployers({ employerId }) {
+  const authStore = useAuthStore()
+  
+  // State management
   const [employers, setEmployers] = useState([])
+  const [jobs, setJobs] = useState([])
+  const [applications, setApplications] = useState([])
+  const [scheduledInterviews, setScheduledInterviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [sortBy, setSortBy] = useState("newest")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(12)
+  
+  // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [selectedEmployer, setSelectedEmployer] = useState(null)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const [showApprovalModal, setShowApprovalModal] = useState(false)
+  const [showJobsModal, setShowJobsModal] = useState(false)
+  const [showApplicationsModal, setShowApplicationsModal] = useState(false)
+  const [showInterviewsModal, setShowInterviewsModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  
+  // Selected items
+  const [selectedEmployer, setSelectedEmployer] = useState(null)
+  const [selectedJobs, setSelectedJobs] = useState([])
+  const [selectedApplications, setSelectedApplications] = useState([])
+  const [selectedInterviews, setSelectedInterviews] = useState([])
+  
+  // Tab management
+  const [activeTab, setActiveTab] = useState('overview')
+  
+  // Form states
+  const [actionLoading, setActionLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
-  const employersDummyData = [
-    {
-      id: 1,
-      name: "Qwesi Tech",
-      contactName: "Ama K.",
-      email: "hiring@qwesi.com",
-      phone: "+233 555 123 456",
-      status: "approved",
-      isActive: true,
-      createdAt: "2024-05-10",
-      description: "Leading tech company hiring across multiple roles.",
-      logo: "/logo.png",
-      location: "Accra, Ghana"
-    },
-    {
-      id: 2,
-      name: "Green Agro Ltd",
-      contactName: "Kojo M.",
-      email: "careers@greenagro.com",
-      phone: "+233 277 000 111",
-      status: "pending",
-      isActive: false,
-      createdAt: "2024-06-21",
-      description: "Agri-tech startup focused on sustainable farming.",
-      logo: "/logo.png",
-      location: "Kumasi, Ghana"
-    },
-    {
-      id: 3,
-      name: "North Star Bank",
-      contactName: "Abena T.",
-      email: "talent@northstar.com",
-      phone: "+233 244 222 333",
-      status: "rejected",
-      isActive: false,
-      createdAt: "2024-04-02",
-      description: "Financial services and digital banking.",
-      logo: "/logo.png",
-      location: "Tema, Ghana"
+  const fetchEmployerJobs = async (employerId) => {
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}job/${employerId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.success ? data.data || [] : []
+    } catch (error) {
+      console.error('Fetch employer jobs error:', error)
+      return []
     }
-  ]
-
-  const fetchEmployers = async () => {
-    setEmployers(employersDummyData)
-    setLoading(false)
   }
 
-  const toggleIsActive = async (employerId) => {
-    const updated = employers.map(emp =>
-      emp.id === employerId ? { ...emp, isActive: !emp.isActive } : emp
-    )
-    setEmployers(updated)
-    toast.success("Employer status updated successfully")
+  const fetchEmployerApplications = async (jobId) => {
+    try {
+      const userId = authStore.user?.id
+      if (!userId) {
+        console.log('User ID not found for applications')
+        return []
+      }
+
+      const response = await fetch(`${API_ROUTES.BASE_URL}applications/employer/${userId}/applications?jobId=${jobId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.success ? data.data || [] : []
+    } catch (error) {
+      console.error('Fetch employer applications error:', error)
+      return []
+    }
+  }
+
+  const fetchEmployerInterviews = async (employerId) => {
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}interviews/employer/${employerId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return data.success ? data.data || [] : []
+    } catch (error) {
+      console.error('Fetch employer interviews error:', error)
+      return []
+    }
+  }
+
+  const toggleEmployerActive = async (employerId) => {
+    setActionLoading(true)
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}job/employers/${employerId}/toggle-active`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update employer status')
+      }
+      
+      await fetchEmployerJobs(employerId)
+      toast.success("Employer status updated successfully")
+    } catch (error) {
+      console.error('Error updating employer status:', error)
+      toast.error("Failed to update employer status")
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const updateEmployerStatus = async (employerId, newStatus) => {
-    const updated = employers.map(emp =>
-      emp.id === employerId ? { ...emp, status: newStatus } : emp
-    )
-    setEmployers(updated)
-    setShowApprovalModal(false)
-    toast.success(`Employer ${newStatus} successfully`)
+    setActionLoading(true)
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}employers/${employerId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        await fetchEmployerJobs(employerId)
+        setShowApprovalModal(false)
+        toast.success(`Employer ${newStatus} successfully`)
+      } else {
+        toast.error(data.message || `Failed to ${newStatus} employer`)
+      }
+    } catch (error) {
+      console.error('Update employer status error:', error)
+      toast.error(`Failed to ${newStatus} employer`)
+    } finally {
+      setActionLoading(false)
+    }
   }
 
-  const filteredEmployers = employers.filter(emp => {
-    const q = searchTerm.toLowerCase()
-    const matchesSearch = emp.name.toLowerCase().includes(q) || (emp.contactName || "").toLowerCase().includes(q) || (emp.email || "").toLowerCase().includes(q)
-    const matchesFilter = filterStatus === "all" || emp.status === filterStatus
-    return matchesSearch && matchesFilter
-  })
+  const deleteEmployer = async (jobId) => {
+    setDeleteLoading(true)
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}job/delete/${jobId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        await fetchEmployers() // Refresh the list
+        setShowDeleteModal(false)
+        toast.success("Job deleted successfully")
+      } else {
+        toast.error(data.message || "Failed to delete job")
+      }
+    } catch (error) {
+      console.error('Delete job error:', error)
+      toast.error("Failed to delete job")
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
+
+  const createEmployer = async (employerId, formData) => {
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}job/create`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        await fetchEmployerJobs(employerId) // Refresh the list
+        toast.success("Employer created successfully!")
+        return { success: true }
+      } else {
+        toast.error(data.message || "Failed to create employer")
+        return { success: false }
+      }
+    } catch (error) {
+      console.error('Create employer error:', error)
+      toast.error("Failed to create employer")
+      return { success: false }
+    }
+  }
+
+  const updateEmployer = async (jobId, formData) => {
+    try {
+      const response = await fetch(`${API_ROUTES.BASE_URL}job/update/${jobId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (data.success) {
+        await fetchEmployers() // Refresh the list
+        toast.success("Job updated successfully!")
+        return { success: true }
+      } else {
+        toast.error(data.message || "Failed to update job")
+        return { success: false }
+      }
+    } catch (error) {
+      console.error('Update job error:', error)
+      toast.error("Failed to update job")
+      return { success: false }
+    }
+  }
+
+  const fetchEmployers = async () => {
+    setLoading(true)
+    try {
+      const userId = authStore.user?.id
+      if (!userId) {
+        console.log('User ID not found')
+        setEmployers([])
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch(`${API_ROUTES.BASE_URL}job/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authStore.getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setEmployers(data.success ? data.data || [] : [])
+    } catch (error) {
+      console.error('Fetch employers error:', error)
+      setEmployers([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Computed values
+  const filteredEmployers = useMemo(() => {
+    let filtered = employers
+
+    if (searchTerm) {
+      const query = searchTerm.toLowerCase()
+      filtered = filtered.filter(emp =>
+        (emp.title || '').toLowerCase().includes(query) ||
+        (emp.employer || '').toLowerCase().includes(query) ||
+        (emp.email || '').toLowerCase().includes(query) ||
+        (emp.location || '').toLowerCase().includes(query) ||
+        (emp.sector || '').toLowerCase().includes(query)
+      )
+    }
+
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(emp => emp.status === filterStatus)
+    }
+
+    // Sort employers
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)
+        case 'oldest':
+          return new Date(a.created_at || a.createdAt) - new Date(b.created_at || b.createdAt)
+        case 'name':
+          return (a.title || '').localeCompare(b.title || '')
+        case 'status':
+          return (a.status || '').localeCompare(b.status || '')
+        case 'jobs':
+          return (b.totalJobs || 0) - (a.totalJobs || 0)
+        case 'applications':
+          return (b.totalApplications || 0) - (a.totalApplications || 0)
+        default:
+          return 0
+      }
+    })
+
+    return filtered
+  }, [employers, searchTerm, filterStatus, sortBy])
+
+  const paginatedEmployers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filteredEmployers.slice(start, end)
+  }, [filteredEmployers, currentPage, itemsPerPage])
+
+  const totalPages = Math.ceil(filteredEmployers.length / itemsPerPage)
 
   const getStatusStats = () => ({
     total: employers.length,
@@ -107,7 +398,96 @@ export default function AdminEmployers() {
     active: employers.filter(e => e.isActive).length,
   })
 
-  useEffect(() => { fetchEmployers() }, [])
+  // Modal handlers
+  const openEmployerDetail = async (employer) => {
+    console.log('Employer object:', employer)
+    setSelectedEmployer(employer)
+    setActiveTab('overview')
+    setShowDetailModal(true)
+    
+    const jobId = employer._id
+    if (!jobId) {
+      console.error('Job ID not found:', employer)
+      return
+    }
+    
+    try {
+      const [employerJobs, employerApplications, employerInterviews] = await Promise.all([
+        fetchEmployerJobs(jobId),
+        fetchEmployerApplications(jobId),
+        fetchEmployerInterviews(jobId)
+      ])
+      
+      setSelectedJobs(employerJobs)
+      setSelectedApplications(employerApplications)
+      setSelectedInterviews(employerInterviews)
+    } catch (error) {
+      console.error('Error fetching employer details:', error)
+    }
+  }
+
+  const openApprovalModal = (employer) => {
+    setSelectedEmployer(employer)
+    setShowApprovalModal(true)
+  }
+
+  const openDeleteModal = (employer) => {
+    setSelectedEmployer(employer)
+    setShowDeleteModal(true)
+  }
+
+  // Utility functions
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200'
+      case 'pending': return 'bg-orange-100 text-orange-800 border-orange-200'
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'approved': return <Check size={10} />
+      case 'pending': return <Clock size={10} />
+      case 'rejected': return <X size={10} />
+      default: return null
+    }
+  }
+
+  useEffect(() => {
+    // Initialize auth store from localStorage
+    authStore.initAuth()
+  }, [])
+
+  useEffect(() => {
+    if (!authStore.isAuthenticated) {
+      console.log('User not authenticated')
+      return
+    }
+    
+    const userId = authStore.user?.id
+    if (!userId) {
+      console.log('User ID not found')
+      return
+    }
+    
+    fetchEmployers()
+  }, [authStore.isAuthenticated, authStore.user?.id])
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1)
+    }
+  }, [currentPage, totalPages])
 
   if (loading) return <Loading />
 
@@ -121,7 +501,7 @@ export default function AdminEmployers() {
           <h1 className="text-2xl lg:text-3xl font-bold text-slate-800">
             Employer <span className="text-blue-600">Management</span>
           </h1>
-          <p className="text-slate-600 mt-1">Manage and verify employers on qwesi.</p>
+          <p className="text-slate-600 mt-1">Manage and verify employers on the platform.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -132,7 +512,7 @@ export default function AdminEmployers() {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Enhanced Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white border border-slate-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
@@ -191,124 +571,240 @@ export default function AdminEmployers() {
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4">
+      {/* Enhanced Filters and Search */}
+      <div className="bg-white border border-slate-200 rounded-lg p-6">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Search employers by name, contact or email..."
+              placeholder="Search employers by name, contact, email, location, or industry..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-slate-400" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected</option>
-            </select>
+          
+          {/* Filters */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter size={18} className="text-slate-400" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Company Name</option>
+                <option value="status">Status</option>
+                <option value="jobs">Total Jobs</option>
+                <option value="applications">Applications</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Employers List */}
+      {/* Employers Grid */}
       {filteredEmployers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {filteredEmployers.map((emp) => (
-            <div key={emp.id} className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              <div className="p-4">
-                {/* Header */}
-                <div className="flex items-start gap-3 mb-4">
-                  <img src={emp.logo} alt={emp.name} className="w-12 h-12 object-contain rounded-lg border border-slate-100" />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-800 truncate">{emp.name}</h3>
-                    <p className="text-sm text-blue-600">{emp.contactName}</p>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {paginatedEmployers.map((employer) => (
+               <div 
+                  key={employer._id} 
+                  className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden"
+                >
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <img 
+                        src={employer.logo || "/logo.png"} 
+                        alt={employer.name} 
+                        className="w-12 h-12 object-contain rounded-lg border border-slate-100 flex-shrink-0" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 
+                          className="font-bold text-slate-800 truncate cursor-pointer hover:text-blue-600 transition-colors"
+                          onClick={() => openEmployerDetail(employer)}
+                        >
+                          {employer.name}
+                        </h3>
+                        <p className="text-sm text-blue-600 truncate">{employer.contactName}</p>
+                        <p className="text-xs text-slate-500 truncate">{employer.industry}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(employer.status)}`}>
+                      {getStatusIcon(employer.status)}
+                      <span className="ml-1">{employer.status.charAt(0).toUpperCase() + employer.status.slice(1)}</span>
+                    </span>
                   </div>
-                </div>
-                {/* Status Badge */}
-                <div className="mb-4">
-                  <span
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                      emp.status === 'pending'
-                        ? 'bg-orange-100 text-orange-800 border border-orange-200'
-                        : emp.status === 'rejected'
-                        ? 'bg-red-100 text-red-800 border border-red-200'
-                        : 'bg-green-100 text-green-800 border border-green-200'
-                    }`}
-                  >
-                    {emp.status === 'pending' && <Clock size={10} className="mr-1" />}
-                    {emp.status === 'approved' && <Check size={10} className="mr-1" />}
-                    {emp.status === 'rejected' && <X size={10} className="mr-1" />}
-                    {emp.status.charAt(0).toUpperCase() + emp.status.slice(1)}
-                  </span>
-                </div>
-                {/* Details */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <Building size={12} className="text-blue-600 flex-shrink-0" />
-                    <span className="truncate">{emp.location}</span>
+
+                  {/* Company Details */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <MapPin size={12} className="text-blue-600 flex-shrink-0" />
+                      <span className="truncate">{employer.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Users size={12} className="text-blue-600 flex-shrink-0" />
+                      <span>{employer.companySize} employees</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Mail size={12} className="text-blue-600 flex-shrink-0" />
+                      <span className="truncate">{employer.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <Phone size={12} className="text-blue-600 flex-shrink-0" />
+                      <span>{employer.phone}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <Phone size={12} className="text-blue-600 flex-shrink-0" />
-                    <span>{emp.phone}</span>
+
+                  {/* Statistics */}
+                  <div className="grid grid-cols-2 gap-4 mb-4 p-3 bg-slate-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-slate-800">{employer.totalJobs || 0}</div>
+                      <div className="text-xs text-slate-600">Total Jobs</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-slate-800">{employer.totalApplications || 0}</div>
+                      <div className="text-xs text-slate-600">Applications</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <Mail size={12} className="text-blue-600 flex-shrink-0" />
-                    <span className="truncate">{emp.email}</span>
+
+                  {/* Rating */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-1">
+                      <Star size={12} className="text-yellow-500 fill-current" />
+                      <span className="text-sm font-medium text-slate-700">{employer.averageRating || 0}</span>
+                      <span className="text-xs text-slate-500">rating</span>
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Last login: {employer.lastLogin ? formatDate(employer.lastLogin) : 'Never'}
+                    </div>
                   </div>
-                </div>
-                {/* Active Toggle */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-medium text-slate-700">Active</span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      onChange={() => toast.promise(toggleIsActive(emp.id), {
-                        loading: "Updating...",
-                        success: "Updated successfully!",
-                        error: "Failed to update"
-                      })}
-                      checked={emp.isActive}
-                    />
-                    <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-blue-600 transition-colors duration-200"></div>
-                    <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
-                  </label>
-                </div>
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setSelectedEmployer(emp); setShowEditModal(true) }}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
-                  >
-                    <Edit3 size={12} />
-                    Edit
-                  </button>
-                  {emp.status === 'pending' && (
+
+                  {/* Active Toggle */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-slate-700">Active Status</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={employer.isActive}
+                        onChange={() => toggleEmployerActive(employer.id)}
+                        disabled={actionLoading}
+                      />
+                      <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-blue-600 transition-colors duration-200"></div>
+                      <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
+                    </label>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => { setSelectedEmployer(emp); setShowApprovalModal(true) }}
+                      onClick={() => openEmployerDetail(employer)}
                       className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-colors"
                     >
                       <Eye size={12} />
-                      Review
+                      View Details
                     </button>
-                  )}
+                    
+                    {employer.status === 'pending' && (
+                      <button
+                        onClick={() => openApprovalModal(employer)}
+                        className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-xs font-medium transition-colors"
+                      >
+                        <Check size={12} />
+                        Review
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => { setSelectedEmployer(employer); setShowEditModal(true) }}
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-colors"
+                    >
+                      <Edit3 size={12} />
+                    </button>
+                    
+                    <button
+                      onClick={() => openDeleteModal(employer)}
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-medium transition-colors"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-slate-600">
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredEmployers.length)} of {filteredEmployers.length} employers
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = currentPage <= 3 ? i + 1 : 
+                                 currentPage >= totalPages - 2 ? totalPages - 4 + i :
+                                 currentPage - 2 + i
+                    return page > 0 && page <= totalPages ? (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                          page === currentPage
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-slate-300 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ) : null
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       ) : (
         <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
           <Users size={48} className="mx-auto text-slate-400 mb-4" />
@@ -332,287 +828,49 @@ export default function AdminEmployers() {
       )}
 
       {/* Modals */}
-      {showCreateModal && <CreateEmployerModal onClose={() => setShowCreateModal(false)} />}
-      {showEditModal && <EditEmployerModal employer={selectedEmployer} onClose={() => setShowEditModal(false)} />}
+      {showCreateModal && (
+        <CreateEmployerModal 
+          onClose={() => setShowCreateModal(false)} 
+          onSubmit={(formData) => createEmployer(employerId, formData)}
+        />
+      )}
+      {showEditModal && (
+        <EditEmployerModal 
+          employer={selectedEmployer} 
+          onClose={() => setShowEditModal(false)} 
+          onSubmit={(formData) => updateEmployer(selectedEmployer._id, formData)}
+        />
+      )}
+      {showDetailModal && (
+        <EmployerDetailModal 
+          employer={selectedEmployer}
+          jobs={selectedJobs}
+          applications={selectedApplications}
+          interviews={selectedInterviews}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onClose={() => setShowDetailModal(false)}
+        />
+      )}
       {showApprovalModal && (
         <ApprovalModal
           employer={selectedEmployer}
           onApprove={(id) => updateEmployerStatus(id, 'approved')}
           onReject={(id) => updateEmployerStatus(id, 'rejected')}
           onClose={() => setShowApprovalModal(false)}
+          loading={actionLoading}
+        />
+      )}
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          employer={selectedEmployer}
+          onConfirm={() => deleteEmployer(selectedEmployer._id)}
+          onClose={() => setShowDeleteModal(false)}
+          loading={deleteLoading}
         />
       )}
     </div>
   )
 }
 
-// Create Employer Modal
-const CreateEmployerModal = ({ onClose }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    contactName: '',
-    email: '',
-    phone: '',
-    location: '',
-    description: '',
-    logo: ''
-  })
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    toast.success("Employer created successfully!")
-    onClose()
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-800">Add Employer</h2>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
-              <X size={20} className="text-slate-600" />
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contact Person</label>
-              <input
-                type="text"
-                value={formData.contactName}
-                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">Add Employer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// Edit Employer Modal
-const EditEmployerModal = ({ employer, onClose }) => {
-  const [formData, setFormData] = useState({
-    name: employer?.name || '',
-    contactName: employer?.contactName || '',
-    email: employer?.email || '',
-    phone: employer?.phone || '',
-    location: employer?.location || '',
-    description: employer?.description || ''
-  })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    toast.success("Employer updated successfully!")
-    onClose()
-  }
-
-  if (!employer) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-800">Edit Employer</h2>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
-              <X size={20} className="text-slate-600" />
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contact Person</label>
-              <input
-                type="text"
-                value={formData.contactName}
-                onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-            <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">Update Employer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// Approval Modal
-const ApprovalModal = ({ employer, onApprove, onReject, onClose }) => {
-  if (!employer) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-800">Review Employer</h2>
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
-              <X size={20} className="text-slate-600" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div className="flex items-start gap-3">
-            <img src={employer.logo} alt={employer.name} className="w-12 h-12 object-contain rounded-lg border" />
-            <div>
-              <div className="font-semibold text-slate-900">{employer.name}</div>
-              <div className="text-sm text-slate-600">Contact: {employer.contactName}</div>
-              <div className="text-sm text-slate-600">Email: {employer.email}</div>
-              <div className="text-sm text-slate-600">Phone: {employer.phone}</div>
-              <div className="text-sm text-slate-600">Location: {employer.location}</div>
-            </div>
-          </div>
-
-          <div className="text-sm text-slate-700">{employer.description}</div>
-
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200">
-            <button
-              onClick={() => onReject(employer.id)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium transition-colors"
-            >
-              <X size={18} />
-              Reject Employer
-            </button>
-            <button
-              onClick={() => onApprove(employer.id)}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Check size={18} />
-              Approve Employer
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}

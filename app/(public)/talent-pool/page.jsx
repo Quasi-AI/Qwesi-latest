@@ -29,6 +29,8 @@ import {
   ExternalLink,
   Phone
 } from 'lucide-react'
+import ChatComponent from '@/components/chat'
+import { toast } from 'react-toastify'
 
 const TalentPool = () => {
   const router = useRouter()
@@ -50,7 +52,20 @@ const TalentPool = () => {
   const [showContactModal, setShowContactModal] = useState(false)
   const [selectedTalent, setSelectedTalent] = useState(null)
   const [isSubmittingContact, setIsSubmittingContact] = useState(false)
-  
+  const [showChat, setShowChat] = useState(false)
+  const [auth, setAuth] = useState(null)
+
+  useEffect(() => {
+    try {
+      const authRaw = localStorage.getItem('auth')
+      if (authRaw) {
+        setAuth(JSON.parse(authRaw))
+      }
+    } catch (error) {
+      console.error('Error parsing auth:', error)
+    }
+  }, [])
+
   // Stats
   const [totalTalents, setTotalTalents] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -285,6 +300,16 @@ const TalentPool = () => {
   }
 
   const saveTalent = (talent) => {
+    // Check authentication first
+    try {
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      if (!auth?.token) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+        return
+      }
+    } catch {}
+
     const talentId = talent.id
     if (!talentId) return
 
@@ -313,6 +338,16 @@ const TalentPool = () => {
   }
 
   const contactTalent = (talent) => {
+    // Check authentication first
+    try {
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      if (!auth?.token) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+        return
+      }
+    } catch {}
+
     if (!talent?.contactAvailable) {
       alert('Contact information is not available for this talent.')
       return
@@ -348,21 +383,43 @@ const TalentPool = () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000))
-      alert(`Contact request sent to ${selectedTalent.name}!`)
+      toast.success(`Contact request sent to ${selectedTalent.name}!`)
       closeContactModal()
     } catch (error) {
-      alert('Failed to send contact request. Please try again.')
+      toast.error('Failed to send contact request. Please try again.')
     } finally {
       setIsSubmittingContact(false)
     }
   }
 
   const startChat = (talent) => {
+    // Check authentication first
+    try {
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      if (!auth?.token) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+        return
+      }
+    } catch {}
+
     if (!talent?.contactAvailable) {
       alert('This talent is not available for chat.')
       return
     }
-    alert(`Starting chat with ${talent.name}...`)
+    
+    setSelectedTalent(talent)
+    setShowChat(true)
+  }
+
+  const handleChatClose = () => {
+    setShowChat(false)
+    setSelectedTalent(null)
+  }
+
+  const handleMeetingScheduled = (meetingData) => {
+    console.log('Meeting scheduled:', meetingData)
+    // Handle meeting scheduled event
   }
 
   // Pagination
@@ -1167,6 +1224,17 @@ const TalentPool = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Chat Component */}
+      {showChat && selectedTalent && (
+        <ChatComponent
+          isOpen={showChat}
+          talent={selectedTalent}
+          currentUserId={auth?.user?.id || 'current-user-id'}
+          onClose={handleChatClose}
+          onMeetingScheduled={handleMeetingScheduled}
+        />
       )}
     </div>
   )

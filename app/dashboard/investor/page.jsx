@@ -1,6 +1,8 @@
 "use client"
 import { useState, useEffect } from 'react';
 import { ChevronDownIcon, XMarkIcon, UserIcon, BanknotesIcon, BoltIcon, QuestionMarkCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { API_ROUTES } from '@/lib/apiRoutes';
+import toast from 'react-hot-toast';
 
 const InvestorRegistration = () => {
   // State management
@@ -13,6 +15,8 @@ const InvestorRegistration = () => {
     phone: '',
     countryCode: '+233',
     email: '',
+    country: '',
+    website: '',
     investorDetails: [],
     description: ''
   });
@@ -52,6 +56,7 @@ const InvestorRegistration = () => {
   const isFormValid = investorForm.name.trim() !== '' &&
     investorForm.email.trim() !== '' &&
     investorForm.phone.trim() !== '' &&
+    investorForm.country.trim() !== '' &&
     investorForm.description.trim() !== '' &&
     investorForm.investorDetails.length > 0;
 
@@ -76,30 +81,75 @@ const InvestorRegistration = () => {
   // Handle form submission
   const handleSubmit = async () => {
     if (!isFormValid) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      alert('Investment profile completed successfully! We will connect you with relevant opportunities.');
-      
-      // Reset form
-      setInvestorForm({
-        name: '',
-        phone: '',
-        countryCode: '+233',
-        email: '',
-        investorDetails: [],
-        description: ''
+      const payload = {
+        userType: 'investor',
+        name: investorForm.name,
+        phone: investorForm.countryCode + investorForm.phone,
+        email: investorForm.email,
+        country: investorForm.country,
+        website: investorForm.website,
+        investorDetails: investorForm.investorDetails,
+        description: investorForm.description
+      };
+
+      const response = await fetch(API_ROUTES.REGISTER_ON_PAGE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
-      
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Investment profile completed successfully! We will connect you with relevant opportunities.', {
+          duration: 4000
+        });
+        
+        // Reset form
+        setInvestorForm({
+          name: '',
+          phone: '',
+          countryCode: '+233',
+          email: '',
+          country: '',
+          website: '',
+          investorDetails: [],
+          description: ''
+        });
+        
+        // Redirect to dashboard after success
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+      } else {
+        toast.error(data.message || 'Registration failed', {
+          duration: 6000
+        });
+      }
+
     } catch (error) {
-      alert('Registration failed. Please try again.');
+      console.error('Investor registration error:', error);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.status === 409) {
+        errorMessage = 'An account with this email already exists. Please use a different email.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage, {
+        duration: 6000
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -125,9 +175,6 @@ const InvestorRegistration = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             {/* Logo and Title */}
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                <span className="text-white font-bold text-lg">Q</span>
-              </div>
               <div>
                 <h1 className="text-2xl font-black bg-gradient-to-r from-slate-800 to-emerald-600 bg-clip-text text-transparent">
                   Investor Registration
@@ -192,6 +239,29 @@ const InvestorRegistration = () => {
                   placeholder="your.email@example.com"
                   className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
                   required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Country *</label>
+                <input
+                  type="text"
+                  value={investorForm.country}
+                  onChange={(e) => handleInputChange('country', e.target.value)}
+                  placeholder="Enter your country"
+                  className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Website</label>
+                <input
+                  type="url"
+                  value={investorForm.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
+                  placeholder="https://yourwebsite.com"
+                  className="w-full px-4 py-3 bg-white/80 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-300"
                 />
               </div>
             </div>

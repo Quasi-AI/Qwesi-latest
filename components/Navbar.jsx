@@ -129,6 +129,13 @@ const Navbar = () => {
 
     // Modal handlers
     const handleLoginClick = () => {
+        // Check if already logged in
+        const auth = readAuth()
+        if (auth?.token && auth?.user) {
+            setUser(auth.user)
+            return
+        }
+        
         setShowLogin(true)
         setMobileMenuOpen(false)
         setUserDropdownOpen(false)

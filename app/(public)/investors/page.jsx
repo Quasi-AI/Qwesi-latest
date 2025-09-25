@@ -196,6 +196,16 @@ const InvestorsPage = () => {
   }
 
   const saveInvestor = (investor) => {
+    // Check authentication first
+    try {
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      if (!auth?.token) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+        return
+      }
+    } catch {}
+
     const investorId = investor._id
     if (!investorId) return
 
@@ -218,6 +228,16 @@ const InvestorsPage = () => {
   }
 
   const contactInvestor = (investor) => {
+    // Check authentication first
+    try {
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      if (!auth?.token) {
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('auth:open-login'))
+        return
+      }
+    } catch {}
+
     if (investor.email) {
       window.open(`mailto:${investor.email}?subject=Investment Inquiry&body=Dear ${investor.name || 'Investor'},`, '_blank')
     }

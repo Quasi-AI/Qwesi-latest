@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { 
   Search, Filter, MapPin, Building, Zap, Clock, ChevronRight, 
   ChevronLeft, X, Briefcase, ArrowRight, Heart, User, FileText, 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { API_ROUTES } from '@/lib/apiRoutes'
 
 const JobsPage = () => {
   // State management
@@ -24,6 +25,7 @@ const JobsPage = () => {
   const [savedJobs, setSavedJobs] = useState([])
   const [userApplications, setUserApplications] = useState([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [applicationErrors, setApplicationErrors] = useState({})
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -37,6 +39,65 @@ const JobsPage = () => {
   // Application form states
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [applicationLoading, setApplicationLoading] = useState(false)
+
+
+  // Add state for file handling
+  const [resumeFile, setResumeFile] = useState(null)
+  const fileInputRef = useRef(null)
+
+  // Add file handling functions
+  const handleFileUpload = (event) => {
+    const target = event.target
+    const file = target.files?.[0]
+    
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload a PDF, DOC, or DOCX file')
+        return
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB')
+        return
+      }
+      
+      setResumeFile(file)
+      // Clear any previous resume errors
+      setApplicationErrors(prev => ({ ...prev, resume: '' }))
+      toast.success('Resume uploaded successfully')
+    }
+  }
+
+  const removeFile = () => {
+    setResumeFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  // Add these state variables for the comprehensive form
+  const [applicationForm, setApplicationForm] = useState({
+    jobId: '',
+    applicantDetails: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      linkedin: '',
+      portfolio: ''
+    },
+    coverLetter: '',
+    skills: [],
+    experience: {
+      years: 0,
+      description: ''
+    }
+  })
+  const [newSkill, setNewSkill] = useState('')
 
   // Helper function to extract country from location
   const extractCountryFromLocation = (location) => {
@@ -63,21 +124,25 @@ const JobsPage = () => {
 
   // Computed values
   const uniqueLocations = useMemo(() => {
+    if (!Array.isArray(jobs)) return []
     const locations = jobs.map(job => job.location).filter(Boolean)
     return [...new Set(locations)].sort()
   }, [jobs])
 
   const uniqueCountries = useMemo(() => {
+    if (!Array.isArray(jobs)) return []
     const countries = jobs.map(job => extractCountryFromLocation(job.location || '')).filter(Boolean)
     return [...new Set(countries)].sort()
   }, [jobs])
 
   const uniqueSectors = useMemo(() => {
+    if (!Array.isArray(jobs)) return []
     const sectors = jobs.map(job => job.sector).filter(Boolean)
     return [...new Set(sectors)].sort()
   }, [jobs])
 
   const uniqueExperienceLevels = useMemo(() => {
+    if (!Array.isArray(jobs)) return []
     const levels = jobs.map(job => job.experience_level).filter(Boolean)
     return [...new Set(levels)].sort((a, b) => {
       const order = ['Entry Level', 'Mid Level', 'Senior Level', 'Executive']
@@ -86,6 +151,7 @@ const JobsPage = () => {
   }, [jobs])
 
   const filteredJobs = useMemo(() => {
+    if (!Array.isArray(jobs)) return []
     let filtered = jobs
 
     if (searchQuery) {
@@ -149,27 +215,33 @@ const JobsPage = () => {
     setError(null)
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Build query parameters
+      const queryParams = new URLSearchParams()
       
-      // Mock data - replace with actual API call
-      const mockJobs = Array.from({ length: 50 }, (_, i) => ({
-        _id: `job-${i + 1}`,
-        title: ['Software Engineer', 'Product Manager', 'Data Analyst', 'UX Designer', 'DevOps Engineer'][i % 5],
-        employer: ['TechCorp', 'InnovateInc', 'DataSystems', 'DesignHub', 'CloudSolutions'][i % 5],
-        location: ['Accra, Ghana', 'Lagos, Nigeria', 'Nairobi, Kenya', 'Cape Town, South Africa', 'London, UK'][i % 5],
-        sector: ['Technology', 'Finance', 'Healthcare', 'Education', 'Manufacturing'][i % 5],
-        experience_level: ['Entry Level', 'Mid Level', 'Senior Level'][i % 3],
-        salary: `$${(50000 + (i * 5000)).toLocaleString()}`,
-        job_description: `We are looking for a skilled professional to join our team. This position requires strong technical skills and excellent communication abilities. ${i + 1}`,
-        field: ['Software Development', 'Product Management', 'Data Science', 'Design', 'Infrastructure'][i % 5],
-        experience_length: `${i % 5 + 1}+ years`,
-        posted: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString(),
-        created_at: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString()
-      }))
+      if (searchQuery) queryParams.append('search', searchQuery)
+      if (filters.location) queryParams.append('location', filters.location)
+      if (filters.country) queryParams.append('country', filters.country)
+      if (filters.sector) queryParams.append('sector', filters.sector)
+      if (filters.experience_level) queryParams.append('experience_level', filters.experience_level)
+      if (filters.salary_range) queryParams.append('salary_range', filters.salary_range)
+      if (sortBy) queryParams.append('sortBy', sortBy)
+      queryParams.append('page', currentPage.toString())
+      queryParams.append('limit', jobsPerPage.toString())
+      
+      const url = `${API_ROUTES.BASE_URL}getjobs${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+      
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
 
-      setJobs(mockJobs)
+      setJobs(data.data || [])
+      
     } catch (err) {
+      console.error('Error fetching jobs:', err)
       setError(err.message || 'Failed to fetch jobs')
       toast.error('Failed to load job opportunities')
     } finally {
@@ -229,6 +301,13 @@ const JobsPage = () => {
       return
     }
     setSelectedJob(job)
+    
+    // Set the jobId in the form
+    setApplicationForm(prev => ({
+      ...prev,
+      jobId: job._id
+    }))
+    
     setShowApplicationModal(true)
   }
 
@@ -241,16 +320,107 @@ const JobsPage = () => {
     openApplicationModal(job)
   }
 
+  // Add proper form validation similar to your Vue composable
+  const validateApplicationForm = (formData, resumeFile) => {
+    const errors = {}
+    
+    // Validate required fields using applicationForm state instead of FormData
+    if (!applicationForm.applicantDetails.firstName?.trim()) {
+      errors.firstName = 'First name is required'
+    }
+
+    if (!applicationForm.applicantDetails.lastName?.trim()) {
+      errors.lastName = 'Last name is required'
+    }
+
+    if (!applicationForm.applicantDetails.email?.trim()) {
+      errors.email = 'Email is required'
+    } else if (!/\S+@\S+\.\S+/.test(applicationForm.applicantDetails.email)) {
+      errors.email = 'Please enter a valid email'
+    }
+
+    if (!applicationForm.applicantDetails.phone?.trim()) {
+      errors.phone = 'Phone number is required'
+    }
+
+    // Validate resume file
+    if (!resumeFile) {
+      errors.resume = 'Resume is required'
+    } else {
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(resumeFile.type)) {
+        errors.resume = 'Please upload a PDF, DOC, or DOCX file'
+      }
+
+      if (resumeFile.size > 5 * 1024 * 1024) {
+        errors.resume = 'File size must be less than 5MB'
+      }
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors
+    }
+  }
+
   const submitApplication = async (e) => {
     e.preventDefault()
+    
+    const validation = validateApplicationForm(null, resumeFile)
+    
+    if (!validation.isValid) {
+      setApplicationErrors(validation.errors)
+      toast.error('Please correct the errors in the form')
+      return
+    }
+
     setApplicationLoading(true)
+    setApplicationErrors({})
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      toast.success('Application submitted successfully!')
-      closeApplicationModal()
+      // Get auth token from localStorage
+      const authRaw = localStorage.getItem('auth')
+      const auth = authRaw ? JSON.parse(authRaw) : null
+      const token = auth?.token
+
+      // Create FormData for API submission
+      const applicationData = new FormData()
+      applicationData.append('jobId', selectedJob._id) // Use selectedJob._id directly
+      applicationData.append('applicantDetails', JSON.stringify(applicationForm.applicantDetails))
+      applicationData.append('coverLetter', applicationForm.coverLetter || '')
+      applicationData.append('skills', JSON.stringify(applicationForm.skills))
+      applicationData.append('experience', JSON.stringify(applicationForm.experience))
+      
+      if (resumeFile) {
+        applicationData.append('resume', resumeFile)
+      }
+      
+      // Make actual API call
+      const response = await fetch(`${API_ROUTES.BASE_URL}/applications/submit`, {
+        method: 'POST',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: applicationData
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        toast.success('Application submitted successfully!')
+        closeApplicationModal()
+        resetApplicationForm()
+      } else {
+        throw new Error(result.message || 'Failed to submit application')
+      }
+      
     } catch (error) {
-      toast.error('Failed to submit application')
+      console.error('Application error:', error)
+      toast.error('Failed to submit application. Please try again.')
     } finally {
       setApplicationLoading(false)
     }
@@ -282,6 +452,51 @@ const JobsPage = () => {
       case 'Mid Level': return 'bg-blue-100 text-blue-800'
       case 'Senior Level': return 'bg-purple-100 text-purple-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  // Add helper functions
+  const addSkill = () => {
+    if (newSkill.trim() && !applicationForm.skills.includes(newSkill.trim())) {
+      setApplicationForm(prev => ({
+        ...prev,
+        skills: [...prev.skills, newSkill.trim()]
+      }))
+      setNewSkill('')
+    }
+  }
+
+  const removeSkill = (index) => {
+    setApplicationForm(prev => ({
+      ...prev,
+      skills: prev.skills.filter((_, i) => i !== index)
+    }))
+  }
+
+  const resetApplicationForm = () => {
+    setApplicationForm({
+      jobId: '',
+      applicantDetails: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: '',
+        linkedin: '',
+        portfolio: ''
+      },
+      coverLetter: '',
+      skills: [],
+      experience: {
+        years: 0,
+        description: ''
+      }
+    })
+    setResumeFile(null)
+    setNewSkill('')
+    setApplicationErrors({})
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
@@ -839,12 +1054,12 @@ const JobsPage = () => {
       {/* Application Modal */}
       {showApplicationModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold">Apply for {selectedJob?.title}</h2>
-                  <p className="text-[#5C3AEB] font-semibold">{selectedJob?.employer}</p>
+                  <h2 className="text-xl font-bold">Apply for Position</h2>
+                  <p className="text-[#5C3AEB] font-semibold">{selectedJob?.title} at {selectedJob?.employer}</p>
                 </div>
                 <button 
                   onClick={closeApplicationModal}
@@ -856,38 +1071,219 @@ const JobsPage = () => {
             </div>
             
             <form onSubmit={submitApplication} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Full Name</label>
-                  <input 
-                    type="text" 
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
-                    required 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Email</label>
-                  <input 
-                    type="email" 
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
-                    required 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Resume/CV</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Drag and drop or click to upload</p>
-                    <input type="file" className="hidden" />
+              <div className="space-y-6">
+                {/* Personal Information Section */}
+                <div className="space-y-4">
+                  <h4 className="flex items-center gap-2 text-lg font-semibold">
+                    <User className="w-5 h-5 text-blue-600" />
+                    Personal Information
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">First Name *</label>
+                      <input 
+                        type="text" 
+                        value={applicationForm.applicantDetails.firstName}
+                        onChange={(e) => setApplicationForm(prev => ({
+                          ...prev,
+                          applicantDetails: { ...prev.applicantDetails, firstName: e.target.value }
+                        }))}
+                        className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB] ${
+                          applicationErrors.firstName ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your first name"
+                      />
+                      {applicationErrors.firstName && (
+                        <p className="text-red-500 text-xs mt-1">{applicationErrors.firstName}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">Last Name *</label>
+                      <input 
+                        type="text" 
+                        value={applicationForm.applicantDetails.lastName}
+                        onChange={(e) => setApplicationForm(prev => ({
+                          ...prev,
+                          applicantDetails: { ...prev.applicantDetails, lastName: e.target.value }
+                        }))}
+                        className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB] ${
+                          applicationErrors.lastName ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your last name"
+                      />
+                      {applicationErrors.lastName && (
+                        <p className="text-red-500 text-xs mt-1">{applicationErrors.lastName}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">Email Address *</label>
+                      <input 
+                        type="email" 
+                        value={applicationForm.applicantDetails.email}
+                        onChange={(e) => setApplicationForm(prev => ({
+                          ...prev,
+                          applicantDetails: { ...prev.applicantDetails, email: e.target.value }
+                        }))}
+                        className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB] ${
+                          applicationErrors.email ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your email"
+                      />
+                      {applicationErrors.email && (
+                        <p className="text-red-500 text-xs mt-1">{applicationErrors.email}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold mb-2">Phone Number *</label>
+                      <input 
+                        type="tel" 
+                        value={applicationForm.applicantDetails.phone}
+                        onChange={(e) => setApplicationForm(prev => ({
+                          ...prev,
+                          applicantDetails: { ...prev.applicantDetails, phone: e.target.value }
+                        }))}
+                        className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB] ${
+                          applicationErrors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your phone number"
+                      />
+                      {applicationErrors.phone && (
+                        <p className="text-red-500 text-xs mt-1">{applicationErrors.phone}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Cover Letter</label>
-                  <textarea 
-                    rows={4}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
-                    placeholder="Tell us why you're a great fit for this position..."
-                  />
+
+                {/* Resume Upload Section */}
+                <div className="space-y-4">
+                  <h4 className="flex items-center gap-2 text-lg font-semibold">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Resume/CV
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Upload Resume *</label>
+                    
+                    {!resumeFile ? (
+                      <div 
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-[#5C3AEB] transition-colors cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 mb-1">Click to upload resume</p>
+                        <p className="text-xs text-gray-500">PDF, DOC, DOCX (Max 5MB)</p>
+                      </div>
+                    ) : (
+                      <div className="border border-gray-300 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <FileText className="w-5 h-5 text-[#5C3AEB]" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{resumeFile.name}</p>
+                              <p className="text-xs text-gray-500">
+                                {(resumeFile.size / (1024 * 1024)).toFixed(2)} MB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={removeFile}
+                            className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <input 
+                      ref={fileInputRef}
+                      type="file" 
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden" 
+                    />
+                    
+                    {applicationErrors.resume && (
+                      <p className="text-red-500 text-xs mt-1">{applicationErrors.resume}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Skills Section */}
+                <div className="space-y-4">
+                  <h4 className="flex items-center gap-2 text-lg font-semibold">
+                    <Zap className="w-5 h-5 text-blue-600" />
+                    Skills
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Add Skills</label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                        placeholder="Enter a skill"
+                      />
+                      <button
+                        type="button"
+                        onClick={addSkill}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {applicationForm.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {applicationForm.skills.map((skill, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                          >
+                            {skill}
+                            <button
+                              type="button"
+                              onClick={() => removeSkill(index)}
+                              className="ml-2 text-blue-600 hover:text-blue-800"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cover Letter Section */}
+                <div className="space-y-4">
+                  <h4 className="flex items-center gap-2 text-lg font-semibold">
+                    <MessageSquare className="w-5 h-5 text-blue-600" />
+                    Cover Letter
+                  </h4>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold mb-2">Cover Letter (Optional)</label>
+                    <textarea
+                      value={applicationForm.coverLetter}
+                      onChange={(e) => setApplicationForm(prev => ({ ...prev, coverLetter: e.target.value }))}
+                      rows={6}
+                      maxLength={5000}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#5C3AEB]"
+                      placeholder="Write a personalized cover letter for this position..."
+                    />
+                    <div className="text-xs text-gray-500 mt-1 text-right">
+                      {applicationForm.coverLetter.length}/5000 characters
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -895,6 +1291,7 @@ const JobsPage = () => {
                 <button
                   type="button"
                   onClick={closeApplicationModal}
+                  disabled={applicationLoading}
                   className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -902,9 +1299,19 @@ const JobsPage = () => {
                 <button
                   type="submit"
                   disabled={applicationLoading}
-                  className="flex-1 px-4 py-2 bg-[#5C3AEB] text-white rounded-lg hover:bg-[#342299] disabled:opacity-50 transition-colors font-semibold"
+                  className="flex-1 px-4 py-2 bg-[#5C3AEB] text-white rounded-lg hover:bg-[#342299] disabled:opacity-50 transition-colors font-semibold flex items-center justify-center gap-2"
                 >
-                  {applicationLoading ? 'Submitting...' : 'Submit Application'}
+                  {applicationLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Submit Application</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -916,3 +1323,26 @@ const JobsPage = () => {
 }
 
 export default JobsPage
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

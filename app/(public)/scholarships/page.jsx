@@ -8,6 +8,7 @@ import {
 import Categories from "@/components/Categories"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link";
+import { toast } from 'react-toastify';
 
 const ScholarshipsPage = () => {
   const router = useRouter()
@@ -264,7 +265,7 @@ const ScholarshipsPage = () => {
     } catch {}
 
     if (isDeadlinePassed(scholarship.deadline || '')) {
-      alert('Application deadline has passed')
+      toast.error('Application deadline has passed')
       return
     }
 
@@ -273,7 +274,7 @@ const ScholarshipsPage = () => {
     } else if (scholarship.contactEmail) {
       window.open(`mailto:${scholarship.contactEmail}?subject=Scholarship Application Inquiry - ${scholarship.title}`, '_blank')
     } else {
-      alert('Contact the provider for application details')
+      toast.error('Contact the provider for application details')
     }
   }
 

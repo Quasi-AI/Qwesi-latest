@@ -9,9 +9,14 @@ import {
     Users,
     Globe,
     X,
-    Loader2
+    Loader2,
+    User,
+    Briefcase,
+    AlertTriangle
 } from 'lucide-react'
 import PageHeader from '@/components/dashboard/PageHeader'
+import toast from 'react-hot-toast'
+import { API_ROUTES } from '@/lib/apiRoutes'
 
 const PitchCompetition = () => {
     const [hasExistingSubmission, setHasExistingSubmission] = useState(false)
@@ -83,6 +88,14 @@ const PitchCompetition = () => {
         return rules[name] ? rules[name](value) : null
     }
 
+    const validateForm = () => {
+        const newErrors = {}
+        const fields = ['name', 'email', 'phone', 'projectName', 'industry', 'summary', 'submissionType', 'description', 'stage', 'websiteUrl']
+        fields.forEach(f => { const e = validateField(f, formData[f]); if (e) newErrors[f] = e })
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
     const getFormProgress = () => {
         const required = ['name', 'email', 'phone', 'projectName', 'industry', 'summary', 'submissionType', 'description', 'stage']
         const filled = required.filter(f => formData[f]).length
@@ -94,19 +107,95 @@ const PitchCompetition = () => {
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }))
     }
 
-    const validateForm = () => {
-        const newErrors = {}
-        const fields = ['name', 'email', 'phone', 'projectName', 'industry', 'summary', 'submissionType', 'description', 'stage', 'websiteUrl']
-        fields.forEach(f => { const e = validateField(f, formData[f]); if (e) newErrors[f] = e })
-        setErrors(newErrors)
-        return Object.keys(newErrors).length === 0
-    }
-
     const submitForm = async (e) => {
         e.preventDefault()
-        if (!validateForm()) return alert('Please fix the errors in the form')
+        if (!validateForm()) {
+            toast.error('Please fix the errors in the form')
+            return
+        }
+        
         setIsSubmitting(true)
-        try { await new Promise(r => setTimeout(r, 700)); alert('Pitch submitted successfully!'); setHasExistingSubmission(true) } catch (err) { console.error(err); alert('Submission failed') } finally { setIsSubmitting(false) }
+        
+        try {
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                phone: formData.countryCode + formData.phone,
+                organization: formData.organization,
+                projectName: formData.projectName,
+                industry: formData.industry,
+                summary: formData.summary,
+                submissionType: formData.submissionType,
+                description: formData.description,
+                stage: formData.stage,
+                fundingAmount: formData.fundingAmount,
+                teamSize: formData.teamSize,
+                websiteUrl: formData.websiteUrl,
+                seeking: formData.seeking
+            }
+
+            const response = await fetch(`${API_ROUTES.SUBMISSIONS}/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+
+            const data = await response.json()
+
+            if (response.ok && data.success) {
+                toast.success('Pitch submitted successfully! Our expert panel will review your submission and contact you within 5-7 business days.', {
+                    duration: 4000
+                })
+                
+                // Reset form
+                setFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    countryCode: '+233',
+                    organization: '',
+                    projectName: '',
+                    industry: '',
+                    summary: '',
+                    submissionType: '',
+                    description: '',
+                    stage: '',
+                    fundingAmount: '',
+                    teamSize: '',
+                    websiteUrl: '',
+                    seeking: []
+                })
+                
+                setHasExistingSubmission(true)
+                
+                // Redirect to dashboard after success
+                setTimeout(() => {
+                    window.location.href = '/dashboard'
+                }, 3000)
+            } else {
+                throw new Error(data.message || 'Submission failed')
+            }
+
+        } catch (error) {
+            console.error('Pitch submission error:', error)
+            
+            let errorMessage = 'Pitch submission failed. Please try again.'
+            
+            if (error.status === 409) {
+                errorMessage = 'You have already submitted a pitch this year. Please wait for next year\'s competition.'
+                setHasExistingSubmission(true)
+            } else if (error.message) {
+                errorMessage = error.message
+            }
+            
+            toast.error(errorMessage, {
+                duration: 6000
+            })
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const formatStatus = (s) => ({ pending: 'Under Review', reviewed: 'Reviewed', approved: 'Approved', rejected: 'Not Selected' }[s] || s)
@@ -134,135 +223,248 @@ const PitchCompetition = () => {
                     )}
 
                     {!hasExistingSubmission && (
-                        <div className="bg-white rounded-2xl border p-8">
-                            <form onSubmit={submitForm} className="space-y-6">
-                                <div>
-                                    <h3 className="text-xl font-bold mb-2">Competition Submission</h3>
-                                    <div className="w-full bg-slate-200 rounded-full h-2"><div className="bg-blue-600 h-2 rounded-full" style={{ width: `${getFormProgress()}%` }} /></div>
-                                </div>
-
-                                <div className="bg-slate-50 p-4 rounded-xl">
-                                    <h4 className="font-semibold mb-3">Personal Information</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-sm block mb-1">Full Name *</label>
-                                            <input value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className="w-full px-3 py-2 border rounded" />
-                                            {errors.name && <div className="text-red-600 text-xs mt-1">{errors.name}</div>}
-                                        </div>
-
-                                        <div>
-                                            <label className="text-sm block mb-1">Email Address *</label>
-                                            <input value={formData.email} onChange={e => handleInputChange('email', e.target.value)} type="email" className="w-full px-3 py-2 border rounded" />
-                                            {errors.email && <div className="text-red-600 text-xs mt-1">{errors.email}</div>}
-                                        </div>
-
-                                        <div>
-                                            <label className="text-sm block mb-1">Phone Number *</label>
-                                            <div className="flex gap-2">
-                                                <select value={formData.countryCode} onChange={e => handleInputChange('countryCode', e.target.value)} className="px-3 py-2 border rounded">
-                                                    <option value="+233">+233</option>
-                                                    <option value="+1">+1</option>
-                                                    <option value="+44">+44</option>
-                                                </select>
-                                                <input value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} type="tel" className="flex-1 px-3 py-2 border rounded" placeholder="Your phone number" />
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                            <div className="p-6 border-b border-slate-200">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-800">Competition Submission</h3>
+                                        <p className="text-slate-600 text-sm mt-1">Submit your innovative idea to compete for funding and mentorship</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-sm font-medium text-slate-700">Progress</div>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="w-24 bg-slate-200 rounded-full h-2">
+                                                <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${getFormProgress()}%` }} />
                                             </div>
-                                            {errors.phone && <div className="text-red-600 text-xs mt-1">{errors.phone}</div>}
+                                            <span className="text-sm font-medium text-blue-600">{getFormProgress()}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form onSubmit={submitForm} className="p-6 space-y-8">
+                                {/* Personal Information Section */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <User className="w-4 h-4 text-blue-600" />
+                                        </div>
+                                        <h4 className="font-semibold text-slate-800">Personal Information</h4>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Full Name *</label>
+                                            <input 
+                                                value={formData.name} 
+                                                onChange={e => handleInputChange('name', e.target.value)} 
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                                placeholder="Enter your full name"
+                                            />
+                                            {errors.name && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.name}</div>}
                                         </div>
 
                                         <div>
-                                            <label className="text-sm block mb-1">Organization/Company</label>
-                                            <input value={formData.organization} onChange={e => handleInputChange('organization', e.target.value)} className="w-full px-3 py-2 border rounded" />
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Email Address *</label>
+                                            <input 
+                                                value={formData.email} 
+                                                onChange={e => handleInputChange('email', e.target.value)} 
+                                                type="email" 
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                                placeholder="your.email@example.com"
+                                            />
+                                            {errors.email && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.email}</div>}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number *</label>
+                                            <div className="flex gap-3">
+                                                <select 
+                                                    value={formData.countryCode} 
+                                                    onChange={e => handleInputChange('countryCode', e.target.value)} 
+                                                    className="px-3 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                >
+                                                    <option value="+233">🇬🇭 +233</option>
+                                                    <option value="+1">🇺🇸 +1</option>
+                                                    <option value="+44">🇬🇧 +44</option>
+                                                </select>
+                                                <input 
+                                                    value={formData.phone} 
+                                                    onChange={e => handleInputChange('phone', e.target.value)} 
+                                                    type="tel" 
+                                                    className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                                    placeholder="Your phone number" 
+                                                />
+                                            </div>
+                                            {errors.phone && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.phone}</div>}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Organization/Company</label>
+                                            <input 
+                                                value={formData.organization} 
+                                                onChange={e => handleInputChange('organization', e.target.value)} 
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                                placeholder="Your organization (optional)"
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 p-4 rounded-xl">
-                                    <h4 className="font-semibold mb-3">Project Information</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Project Information Section */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <Briefcase className="w-4 h-4 text-green-600" />
+                                        </div>
+                                        <h4 className="font-semibold text-slate-800">Project Information</h4>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="text-sm block mb-1">Project/Idea Name *</label>
-                                            <input value={formData.projectName} onChange={e => handleInputChange('projectName', e.target.value)} className="w-full px-3 py-2 border rounded" />
-                                            {errors.projectName && <div className="text-red-600 text-xs mt-1">{errors.projectName}</div>}
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Project/Idea Name *</label>
+                                            <input 
+                                                value={formData.projectName} 
+                                                onChange={e => handleInputChange('projectName', e.target.value)} 
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                                placeholder="Enter your project name"
+                                            />
+                                            {errors.projectName && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.projectName}</div>}
                                         </div>
 
                                         <div>
-                                            <label className="text-sm block mb-1">Industry/Category *</label>
-                                            <select value={formData.industry} onChange={e => handleInputChange('industry', e.target.value)} className="w-full px-3 py-2 border rounded">
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Industry/Category *</label>
+                                            <select 
+                                                value={formData.industry} 
+                                                onChange={e => handleInputChange('industry', e.target.value)} 
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            >
                                                 <option value="">Select Industry</option>
                                                 {industries.map(i => <option key={i} value={i}>{i}</option>)}
                                             </select>
-                                            {errors.industry && <div className="text-red-600 text-xs mt-1">{errors.industry}</div>}
+                                            {errors.industry && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.industry}</div>}
                                         </div>
                                     </div>
 
-                                    <div className="mt-3">
-                                        <label className="text-sm block mb-1">Project Summary *</label>
-                                        <textarea value={formData.summary} onChange={e => handleInputChange('summary', e.target.value)} rows={3} className="w-full px-3 py-2 border rounded resize-none" />
-                                        <div className="flex justify-between text-xs text-slate-500"><div>{errors.summary ? <span className="text-red-600">{errors.summary}</span> : null}</div><div>{formData.summary.length}/500</div></div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Project Summary *</label>
+                                        <textarea 
+                                            value={formData.summary} 
+                                            onChange={e => handleInputChange('summary', e.target.value)} 
+                                            rows={4} 
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none" 
+                                            placeholder="Provide a brief summary of your project (30-500 characters)"
+                                        />
+                                        <div className="flex justify-between items-center mt-2">
+                                            <div>{errors.summary && <span className="text-red-600 text-sm flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.summary}</span>}</div>
+                                            <div className="text-sm text-slate-500">{formData.summary.length}/500</div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 p-4 rounded-xl">
-                                    <h4 className="font-semibold mb-3">Competition Type *</h4>
-                                    <div className="space-y-2">
+                                {/* Project Details Section */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                        <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            <FileText className="w-4 h-4 text-orange-600" />
+                                        </div>
+                                        <h4 className="font-semibold text-slate-800">Project Details</h4>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Detailed Description *</label>
+                                        <textarea 
+                                            value={formData.description} 
+                                            onChange={e => handleInputChange('description', e.target.value)} 
+                                            rows={6} 
+                                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none" 
+                                            placeholder="Provide a detailed description of your project, including the problem it solves, your solution, and its impact (50-2000 characters)"
+                                        />
+                                        <div className="flex justify-between items-center mt-2">
+                                            <div>{errors.description && <span className="text-red-600 text-sm flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.description}</span>}</div>
+                                            <div className="text-sm text-slate-500">{formData.description.length}/2000</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Project Stage *</label>
+                                            <select 
+                                                value={formData.stage} 
+                                                onChange={e => handleInputChange('stage', e.target.value)} 
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                            >
+                                                <option value="">Select Stage</option>
+                                                {projectStages.map(stage => <option key={stage} value={stage}>{stage}</option>)}
+                                            </select>
+                                            {errors.stage && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.stage}</div>}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-700 mb-2">Website URL</label>
+                                            <input 
+                                                value={formData.websiteUrl} 
+                                                onChange={e => handleInputChange('websiteUrl', e.target.value)} 
+                                                type="url"
+                                                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                                                placeholder="https://yourproject.com"
+                                            />
+                                            {errors.websiteUrl && <div className="text-red-600 text-sm mt-1 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.websiteUrl}</div>}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Competition Type Section */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <Star className="w-4 h-4 text-purple-600" />
+                                        </div>
+                                        <h4 className="font-semibold text-slate-800">Competition Type *</h4>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 gap-4">
                                         {pitchTypes.map(opt => (
-                                            <label key={opt.value} className={`flex items-start p-3 border rounded ${formData.submissionType === opt.value ? 'border-blue-400 bg-blue-50' : 'border-slate-200'}`}>
-                                                <input type="radio" name="submissionType" value={opt.value} checked={formData.submissionType === opt.value} onChange={e => handleInputChange('submissionType', e.target.value)} className="mt-1 mr-3" />
-                                                <div>
-                                                    <div className="font-semibold">{opt.label}</div>
-                                                    <div className="text-xs text-slate-600">{opt.description}</div>
+                                            <label key={opt.value} className={`flex items-start p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-slate-50 ${formData.submissionType === opt.value ? 'border-blue-500 bg-blue-50' : 'border-slate-200'}`}>
+                                                <input 
+                                                    type="radio" 
+                                                    name="submissionType" 
+                                                    value={opt.value} 
+                                                    checked={formData.submissionType === opt.value} 
+                                                    onChange={e => handleInputChange('submissionType', e.target.value)} 
+                                                    className="mt-1 mr-4 text-blue-600" 
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="font-semibold text-slate-800">{opt.label}</div>
+                                                    <div className="text-sm text-slate-600 mt-1">{opt.description}</div>
                                                 </div>
                                             </label>
                                         ))}
-                                        {errors.submissionType && <div className="text-red-600 text-xs mt-1">{errors.submissionType}</div>}
+                                        {errors.submissionType && <div className="text-red-600 text-sm flex items-center gap-1"><AlertTriangle className="w-4 h-4" />{errors.submissionType}</div>}
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 p-4 rounded-xl">
-                                    <h4 className="font-semibold mb-3">Detailed Project Description *</h4>
-                                    <textarea value={formData.description} onChange={e => handleInputChange('description', e.target.value)} rows={6} className="w-full px-3 py-2 border rounded resize-none" />
-                                    <div className="flex justify-between text-xs text-slate-500"><div>{errors.description ? <span className="text-red-600">{errors.description}</span> : null}</div><div>{formData.description.length}/2000</div></div>
-                                </div>
-
-                                <div className="bg-slate-50 p-4 rounded-xl">
-                                    <h4 className="font-semibold mb-3">Project Details</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-sm block mb-1">Current Development Stage *</label>
-                                            <select value={formData.stage} onChange={e => handleInputChange('stage', e.target.value)} className="w-full px-3 py-2 border rounded">
-                                                <option value="">Select Stage</option>
-                                                {projectStages.map(s => <option key={s} value={s}>{s}</option>)}
-                                            </select>
-                                            {errors.stage && <div className="text-red-600 text-xs mt-1">{errors.stage}</div>}
-                                        </div>
-
-                                        <div>
-                                            <label className="text-sm block mb-1">Funding Sought</label>
-                                            <input value={formData.fundingAmount} onChange={e => handleInputChange('fundingAmount', e.target.value)} className="w-full px-3 py-2 border rounded" placeholder="e.g., $50,000 or Not Seeking Funding" />
-                                        </div>
-
-                                        <div>
-                                            <label className="text-sm block mb-1">Team Size</label>
-                                            <select value={formData.teamSize} onChange={e => handleInputChange('teamSize', e.target.value)} className="w-full px-3 py-2 border rounded">
-                                                <option value="">Select Team Size</option>
-                                                <option value="Just me">Just me (Solo founder)</option>
-                                                <option value="2-3">2-3 people</option>
-                                                <option value="4-10">4-10 people</option>
-                                                <option value="10+">10+ people</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="text-sm block mb-1">Website/Demo URL</label>
-                                            <input value={formData.websiteUrl} onChange={e => handleInputChange('websiteUrl', e.target.value)} type="url" className="w-full px-3 py-2 border rounded" placeholder="https://your-project.com" />
-                                        </div>
+                                {/* Submit Button */}
+                                <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+                                    <div className="text-sm text-slate-500">
+                                        <span className="text-red-500">*</span> Required fields. All submissions will be reviewed by our expert panel.
                                     </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-4 border-t">
-                                    <div className="text-xs text-slate-500">* Required fields. All submissions will be reviewed by our expert panel.</div>
-                                    <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-blue-600 text-white rounded">
-                                        {isSubmitting ? <> <Loader2 className="w-4 h-4 inline mr-2" /> Submitting...</> : 'Submit Pitch'}
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmitting || getFormProgress() < 100} 
+                                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg font-semibold transition-colors flex items-center gap-2"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle className="w-5 h-5" />
+                                                Submit Pitch
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </form>

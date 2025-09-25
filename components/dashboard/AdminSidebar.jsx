@@ -70,19 +70,6 @@ const AdminSidebar = () => {
                 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 flex flex-col h-full
             `}>
-                {/* Header */}
-                <div className="flex flex-col gap-3 justify-center items-center pt-6 pb-6 border-b border-slate-100">
-                    <Image 
-                        className="w-12 h-12 rounded-full border-2 border-blue-100" 
-                        src={assets.qwesi_head} 
-                        alt="Qwesi Logo" 
-                        width={80} 
-                        height={80} 
-                    />
-                    <div className="text-center">
-                        <p className="text-slate-800 font-semibold text-sm">Qwesi</p>
-                    </div>
-                </div>
 
                 {/* Navigation Links */}
                 <nav className="flex-1 px-3 py-4 overflow-y-auto">
