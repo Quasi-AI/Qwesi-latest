@@ -8,6 +8,7 @@ export const useChatSocket = () => {
   const socketRef = useRef(null);
   const authStore = useAuthStore();
 
+  
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
 
