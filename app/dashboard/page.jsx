@@ -120,25 +120,6 @@ export default function AdminDashboard() {
                     <OrdersAreaChart allOrders={dashboardData.allOrders} />
                 </div>
             </div>
-
-            {/* Additional Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white/60 backdrop-blur-sm border border-gray-200/60 rounded-xl p-4 text-center">
-                    <TrendingUp className="w-8 h-8 text-[#00C4A7] mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 font-medium">Growth Rate</p>
-                    <p className="text-lg font-bold text-[#00C4A7]">+12.5%</p>
-                </div>
-                <div className="bg-white/60 backdrop-blur-sm border border-gray-200/60 rounded-xl p-4 text-center">
-                    <Users className="w-8 h-8 text-[#5C3AEB] mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 font-medium">Active Users</p>
-                    <p className="text-lg font-bold text-[#5C3AEB]">2,847</p>
-                </div>
-                <div className="bg-white/60 backdrop-blur-sm border border-gray-200/60 rounded-xl p-4 text-center">
-                    <BarChart3 className="w-8 h-8 text-[#FF6B6B] mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 font-medium">Conversion Rate</p>
-                    <p className="text-lg font-bold text-[#FF6B6B]">3.2%</p>
-                </div>
-            </div>
         </div>
     )
 }
