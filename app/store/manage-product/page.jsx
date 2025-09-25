@@ -1,35 +1,37 @@
 'use client'
-import { assets } from "@/assets/assets"
-import Image from "next/image"
 import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
+import Image from "next/image"
+import Loading from "@/components/Loading"
+import { useAuthStore } from '@/stores/authStore'
+import { authFetch } from '@/lib/auth'
 
 const API_BASE_URL = 'https://dark-caldron-448714-u5.uc.r.appspot.com/api'
 
-export default function StoreAddProduct() {
+export default function StoreManageProducts() {
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const { user } = useAuthStore()
 
+    const [loading, setLoading] = useState(true)
+    const [products, setProducts] = useState([])
     const [stores, setStores] = useState([])
     const [selectedStore, setSelectedStore] = useState('')
-    const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null })
-    const [productInfo, setProductInfo] = useState({
-        name: "",
-        description: "",
-        price: 0,
-        sku: "",
-        stock: 0,
-        currency: "USD",
-        attributes: {}
-    })
-    const [loading, setLoading] = useState(false)
 
     const fetchStores = async () => {
+        if (!user?.id) {
+            setLoading(false)
+            return
+        }
+
         try {
-            const response = await fetch(`${API_BASE_URL}/stores`)
+            const response = await authFetch(`${API_BASE_URL}/stores?userId=${user.id}`)
             if (response.ok) {
-                const data = await response.json()
-                setStores(data)
-                if (data.length > 0) {
-                    setSelectedStore(data[0]._id)
+                const result = await response.json()
+                const data = result.data || result
+                const storesArray = Array.isArray(data) ? data : []
+                setStores(storesArray)
+                if (storesArray.length > 0) {
+                    setSelectedStore(storesArray[0]._id)
                 }
             } else {
                 throw new Error('Failed to fetch stores')
@@ -37,106 +39,86 @@ export default function StoreAddProduct() {
         } catch (error) {
             console.error('Error fetching stores:', error)
             toast.error('Failed to fetch stores')
-        }
-    }
-
-    const onChangeHandler = (e) => {
-        setProductInfo({ ...productInfo, [e.target.name]: e.target.value })
-    }
-
-    const uploadImages = async () => {
-        const imageUrls = []
-        // In a real implementation, you would upload images to a cloud service like Cloudinary, AWS S3, etc.
-        // For now, we'll just return placeholder URLs
-        
-        for (let key of Object.keys(images)) {
-            if (images[key]) {
-                // Simulate image upload - replace with actual upload logic
-                const imageUrl = `https://via.placeholder.com/400x400?text=Product+Image+${key}`
-                imageUrls.push(imageUrl)
+        } finally {
+            if (!selectedStore) {
+                setLoading(false)
             }
         }
-        
-        return imageUrls
     }
 
-    const onSubmitHandler = async (e) => {
-        e.preventDefault()
-        
-        if (!selectedStore) {
-            toast.error('Please select a store')
-            return
-        }
+    const fetchProducts = async () => {
+        if (!selectedStore) return
 
-        setLoading(true)
-        
         try {
-            // Upload images first (in a real app, you'd upload to cloud storage)
-            const imageUrls = await uploadImages()
-
-            const productData = {
-                ...productInfo,
-                storeId: selectedStore,
-                price: parseFloat(productInfo.price),
-                stock: parseInt(productInfo.stock),
-                images: imageUrls,
-            }
-
-            const response = await fetch(`${API_BASE_URL}/stores/${selectedStore}/products`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(productData),
-            })
-
+            const response = await authFetch(`${API_BASE_URL}/stores/${selectedStore}/products`)
             if (response.ok) {
-                const newProduct = await response.json()
-                
-                // Reset form
-                setProductInfo({
-                    name: "",
-                    description: "",
-                    price: 0,
-                    sku: "",
-                    stock: 0,
-                    currency: "USD",
-                    attributes: {}
-                })
-                setImages({ 1: null, 2: null, 3: null, 4: null })
-                
-                toast.success('Product added successfully!')
+                const result = await response.json()
+                const data = result.data || result
+                setProducts(Array.isArray(data) ? data : [])
             } else {
-                const errorData = await response.json()
-                throw new Error(errorData.message || 'Failed to add product')
+                throw new Error('Failed to fetch products')
             }
         } catch (error) {
-            console.error('Error adding product:', error)
-            toast.error(error.message || 'Failed to add product')
+            console.error('Error fetching products:', error)
+            toast.error('Failed to fetch products')
         } finally {
             setLoading(false)
         }
     }
 
+    const toggleStock = async (productId) => {
+        try {
+            const product = products.find(p => p._id === productId)
+            const newStockStatus = product.stock > 0 ? 0 : 10 // Toggle between 0 and 10
+
+            const response = await authFetch(`${API_BASE_URL}/stores/${selectedStore}/products/${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ stock: newStockStatus }),
+            })
+
+            if (response.ok) {
+                const updatedProduct = await response.json()
+                setProducts(products.map(p => 
+                    p._id === productId ? updatedProduct : p
+                ))
+                toast.success('Product stock updated successfully')
+            } else {
+                throw new Error('Failed to update product stock')
+            }
+        } catch (error) {
+            console.error('Error updating product stock:', error)
+            toast.error('Failed to update product stock')
+        }
+    }
+
     useEffect(() => {
         fetchStores()
-    }, [])
+    }, [user?.id])
+
+    useEffect(() => {
+        if (selectedStore) {
+            fetchProducts()
+        }
+    }, [selectedStore])
+
+    if (loading) return <Loading />
 
     return (
-        <form onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Adding Product..." })} className="text-slate-500 mb-28">
-            <h1 className="text-2xl">Add New <span className="text-slate-800 font-medium">Products</span></h1>
+        <>
+            <h1 className="text-2xl text-slate-500 mb-5">Manage <span className="text-slate-800 font-medium">Products</span></h1>
             
             {/* Store Selection */}
             {stores.length > 1 && (
-                <div className="my-6">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Select Store *</label>
+                <div className="mb-5">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Select Store</label>
                     <select
                         value={selectedStore}
                         onChange={(e) => setSelectedStore(e.target.value)}
-                        className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded"
-                        required
+                        className="border border-slate-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">Select a store</option>
                         {stores.map((store) => (
                             <option key={store._id} value={store._id}>
                                 {store.name}
@@ -146,118 +128,76 @@ export default function StoreAddProduct() {
                 </div>
             )}
 
-            <p className="mt-7">Product Images</p>
-
-            <div className="flex gap-3 mt-4">
-                {Object.keys(images).map((key) => (
-                    <label key={key} htmlFor={`images${key}`}>
-                        <Image 
-                            width={300} 
-                            height={300} 
-                            className='h-15 w-auto border border-slate-200 rounded cursor-pointer' 
-                            src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area} 
-                            alt="" 
-                        />
-                        <input 
-                            type="file" 
-                            accept='image/*' 
-                            id={`images${key}`} 
-                            onChange={e => setImages({ ...images, [key]: e.target.files[0] })} 
-                            hidden 
-                        />
-                    </label>
-                ))}
-            </div>
-
-            <label className="flex flex-col gap-2 my-6">
-                Name *
-                <input 
-                    type="text" 
-                    name="name" 
-                    onChange={onChangeHandler} 
-                    value={productInfo.name} 
-                    placeholder="Enter product name" 
-                    className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded" 
-                    required 
-                />
-            </label>
-
-            <label className="flex flex-col gap-2 my-6">
-                Description *
-                <textarea 
-                    name="description" 
-                    onChange={onChangeHandler} 
-                    value={productInfo.description} 
-                    placeholder="Enter product description" 
-                    rows={5} 
-                    className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded resize-none" 
-                    required 
-                />
-            </label>
-
-            <label className="flex flex-col gap-2 my-6">
-                SKU (Optional)
-                <input 
-                    type="text" 
-                    name="sku" 
-                    onChange={onChangeHandler} 
-                    value={productInfo.sku} 
-                    placeholder="Enter product SKU" 
-                    className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded" 
-                />
-            </label>
-
-            <div className="flex gap-5">
-                <label className="flex flex-col gap-2">
-                    Price ($) *
-                    <input 
-                        type="number" 
-                        name="price" 
-                        onChange={onChangeHandler} 
-                        value={productInfo.price} 
-                        placeholder="0.00" 
-                        min="0" 
-                        step="0.01"
-                        className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded" 
-                        required 
-                    />
-                </label>
-                <label className="flex flex-col gap-2">
-                    Stock Quantity *
-                    <input 
-                        type="number" 
-                        name="stock" 
-                        onChange={onChangeHandler} 
-                        value={productInfo.stock} 
-                        placeholder="0" 
-                        min="0"
-                        className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded" 
-                        required 
-                    />
-                </label>
-            </div>
-
-            <label className="flex flex-col gap-2 my-6">
-                Currency
-                <select
-                    name="currency"
-                    onChange={onChangeHandler}
-                    value={productInfo.currency}
-                    className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded"
-                >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="CAD">CAD (C$)</option>
-                </select>
-            </label>
-
-            <button 
-                disabled={loading || !selectedStore} 
-                className="bg-slate-800 text-white px-6 mt-7 py-2 hover:bg-slate-900 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {loading ? 'Adding Product...' : 'Add Product'}
-            </button>
-        </form>
+            {products.length === 0 ? (
+                <div className="text-center py-10">
+                    <p className="text-slate-500">No products found for this store</p>
+                </div>
+            ) : (
+                <table className="w-full max-w-4xl text-left ring ring-slate-200 rounded overflow-hidden text-sm">
+                    <thead className="bg-slate-50 text-gray-700 uppercase tracking-wider">
+                        <tr>
+                            <th className="px-4 py-3">Name</th>
+                            <th className="px-4 py-3 hidden md:table-cell">Description</th>
+                            <th className="px-4 py-3 hidden md:table-cell">SKU</th>
+                            <th className="px-4 py-3">Price</th>
+                            <th className="px-4 py-3">Stock</th>
+                            <th className="px-4 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-slate-700">
+                        {products.map((product) => (
+                            <tr key={product._id} className="border-t border-gray-200 hover:bg-gray-50">
+                                <td className="px-4 py-3">
+                                    <div className="flex gap-2 items-center">
+                                        {product.images && product.images.length > 0 ? (
+                                            <Image 
+                                                width={40} 
+                                                height={40} 
+                                                className='p-1 shadow rounded cursor-pointer' 
+                                                src={product.images[0]} 
+                                                alt={product.name}
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 bg-slate-100 rounded flex items-center justify-center">
+                                                <span className="text-xs">No img</span>
+                                            </div>
+                                        )}
+                                        {product.name}
+                                    </div>
+                                </td>
+                                <td className="px-4 py-3 max-w-md text-slate-600 hidden md:table-cell truncate">
+                                    {product.description || 'No description'}
+                                </td>
+                                <td className="px-4 py-3 hidden md:table-cell">
+                                    {product.sku || 'N/A'}
+                                </td>
+                                <td className="px-4 py-3">
+                                    {currency} {(product.price || 0).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <span className={`px-2 py-1 rounded text-xs ${
+                                        product.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                        {product.stock} in stock
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                    <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer" 
+                                            onChange={() => toast.promise(toggleStock(product._id), { loading: "Updating stock..." })} 
+                                            checked={product.stock > 0} 
+                                        />
+                                        <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200"></div>
+                                        <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
+                                    </label>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </>
     )
 }

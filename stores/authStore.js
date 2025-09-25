@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { readAuth } from '@/lib/auth';
+import { readAuth, persistAuth } from '@/lib/auth';
 
 export const useAuthStore = create((set, get) => ({
   user: null,
@@ -20,6 +20,7 @@ export const useAuthStore = create((set, get) => ({
 
   // Set auth data
   setAuth: (user, token) => {
+    persistAuth({ user, token });
     set({
       user,
       token,
@@ -27,8 +28,21 @@ export const useAuthStore = create((set, get) => ({
     });
   },
 
+  setUser: (user) => {
+    const token = get().token;
+    if (token) {
+      persistAuth({ user, token });
+    }
+    set(state => ({
+      ...state,
+      user,
+      isAuthenticated: !!user,
+    }));
+  },
+
   // Clear auth data
   clearAuth: () => {
+    persistAuth({ user: null, token: null }); // Also clear from storage
     set({
       user: null,
       token: null,

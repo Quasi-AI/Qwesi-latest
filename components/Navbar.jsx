@@ -270,11 +270,11 @@ const Navbar = () => {
                                         className="flex items-center space-x-3 p-2 text-gray-700 hover:text-[#5C3AEB] hover:bg-gray-50 rounded-full transition-all duration-200"
                                     >
                                         <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                                            {user.avatar ? (
-                                                <Image 
-                                                    src={user.avatar} 
-                                                    alt={user.name} 
-                                                    width={32} 
+                                            {user.avatar && user.avatar.trim() ? (
+                                                <Image
+                                                    src={user.avatar}
+                                                    alt={user.name}
+                                                    width={32}
                                                     height={32}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -299,11 +299,11 @@ const Navbar = () => {
                                             <div className="px-4 py-3 border-b border-gray-100">
                                                 <div className="flex items-center space-x-3">
                                                     <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                                                        {user.avatar ? (
-                                                            <Image 
-                                                                src={user.avatar} 
-                                                                alt={user.name} 
-                                                                width={40} 
+                                                        {user.avatar && user.avatar.trim() ? (
+                                                            <Image
+                                                                src={user.avatar}
+                                                                alt={user.name}
+                                                                width={40}
                                                                 height={40}
                                                                 className="w-full h-full object-cover"
                                                             />
@@ -458,22 +458,22 @@ const Navbar = () => {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
                         {/* User Info for Mobile (if logged in) */}
                         {user && (
-                            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-                                    {user.avatar ? (
-                                        <Image 
-                                            src={user.avatar} 
-                                            alt={user.name} 
-                                            width={40} 
-                                            height={40}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <span className="text-lg font-medium text-gray-600">
-                                            {user.name?.charAt(0) || 'U'}
-                                        </span>
-                                    )}
-                                </div>
+                                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                                    <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+                                        {user.avatar && user.avatar.trim() ? (
+                                            <Image
+                                                src={user.avatar}
+                                                alt={user.name}
+                                                width={40}
+                                                height={40}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-lg font-medium text-gray-600">
+                                                {user.name?.charAt(0) || 'U'}
+                                            </span>
+                                        )}
+                                    </div>
                                 <div>
                                     <p className="text-sm font-medium text-gray-900">{user.name}</p>
                                     <p className="text-xs text-gray-500">{user.email}</p>

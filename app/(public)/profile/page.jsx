@@ -1,10 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Loading from '@/components/Loading'
-import { readAuth, fetchUserDetails, validateStoredToken, persistAuth, authFetch } from '@/lib/auth'
+import { readAuth, validateStoredToken, persistAuth, authFetch } from '@/lib/auth'
 import { API_ROUTES } from '@/lib/apiRoutes'
 import toast from 'react-hot-toast'
-import { User, Mail, Phone, Calendar, ShieldAlert } from 'lucide-react'
+import { User, Mail, Phone, Calendar, ShieldAlert, Briefcase, MapPin } from 'lucide-react'
+
+const API_BASE_URL = 'https://dark-caldron-448714-u5.uc.r.appspot.com/api'
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null)
@@ -33,8 +35,17 @@ export default function ProfilePage() {
         }
 
         // Fetch latest user details from backend
-        const details = await fetchUserDetails(token)
-        setUser(details || auth?.user || null)
+        const response = await authFetch(`${API_BASE_URL}/dashboard/qwesi/personal?id=${auth?.user?.id}`)
+        if (response.ok) {
+            const data = await response.json()
+            if (data.success) {
+                setUser(data.data.profile)
+            } else {
+                setUser(auth?.user || null)
+            }
+        } else {
+            setUser(auth?.user || null)
+        }
       } catch (e) {
         setError(e?.message || 'Failed to load profile.')
         setUser(null)
@@ -194,11 +205,9 @@ export default function ProfilePage() {
                 <InfoCard icon={Mail} label="Email" value={user?.email || 'N/A'} />
                 <InfoCard icon={Phone} label="Phone" value={user?.phone || user?.mobile || 'N/A'} />
                 <InfoCard icon={Calendar} label="Date of Birth" value={user?.dob || user?.dateOfBirth || 'N/A'} />
+                <InfoCard icon={Briefcase} label="User Type" value={user?.userType || 'N/A'} />
+                <InfoCard icon={MapPin} label="Country" value={user?.country || 'N/A'} />
               </div>
-              <details className="mt-4">
-                <summary className="text-sm text-slate-600 cursor-pointer select-none">Show raw profile data</summary>
-                <pre className="mt-2 p-3 bg-slate-50 rounded border text-xs overflow-x-auto">{JSON.stringify(user, null, 2)}</pre>
-              </details>
             </>
           )}
         </div>

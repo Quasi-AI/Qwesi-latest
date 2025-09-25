@@ -1,11 +1,11 @@
 'use client'
 import Loading from "@/components/Loading"
 import PersonalActivityChart from "@/components/PersonalActivityChart"
-import { 
+import {
     MessageSquare,
-    Users, 
-    Award, 
-    TrendingUp, 
+    Users,
+    Award,
+    TrendingUp,
     Target,
     Phone,
     Calendar,
@@ -20,18 +20,22 @@ import {
     Mail,
     User,
     Zap,
-    CheckCircle
+    CheckCircle,
+    X
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import PageHeader from '@/components/dashboard/PageHeader'
 import Image from 'next/image'
+import { useAuthStore } from '@/stores/authStore'
+import { authFetch } from '@/lib/auth'
 
 const API_BASE_URL = 'https://dark-caldron-448714-u5.uc.r.appspot.com/api'
 
 export default function QwesiPersonalDashboard() {
+    const { user } = useAuthStore()
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [userIdentifier, setUserIdentifier] = useState('233247000000') // Get from auth context - phone, email, or id
+    const userIdentifier = user?.id || ''
     const [dashboardData, setDashboardData] = useState({
         profile: {
             name: '',
@@ -80,24 +84,72 @@ export default function QwesiPersonalDashboard() {
     useEffect(() => {
         const fetchPersonalDashboard = async () => {
             try {
+                console.log('Fetching dashboard for user:', userIdentifier)
                 setError(null)
                 // Use phone as identifier - adjust based on your auth system
-                const response = await fetch(`${API_BASE_URL}/dashboard/qwesi/personal?phone=${userIdentifier}`)
-                
+                const response = await authFetch(`${API_BASE_URL}/dashboard/qwesi/personal?id=${userIdentifier}`)
+
                 if (response.ok) {
                     const result = await response.json()
+                    console.log('Dashboard API response:', result)
                     if (result.success) {
                         setDashboardData(result.data)
                     } else {
                         throw new Error(result.message || 'Failed to fetch dashboard data')
                     }
                 } else {
-                    throw new Error('Failed to fetch dashboard data')
+                    const errorText = await response.text()
+                    console.error('API error response:', response.status, errorText)
+                    throw new Error(`Failed to fetch dashboard data: ${response.status}`)
                 }
 
             } catch (error) {
                 console.error('Failed to fetch dashboard data:', error)
                 setError(error.message)
+                setDashboardData({
+                    profile: {
+                        name: user?.name || 'User',
+                        userType: user?.userType || 'user',
+                        phone: user?.phone || '',
+                        email: user?.email || '',
+                        profileImage: '',
+                        country: '',
+                        website: '',
+                        profileCompleteness: 0,
+                        createdAt: user?.createdAt || null
+                    },
+                    flags: {},
+                    activity: {
+                        conversationCount: 0,
+                        pitchCount: 0,
+                        lastConversationAt: null,
+                        lastPitchAt: null,
+                        last30DaysConversations: []
+                    },
+                    usage: {
+                        dailyMessages: 0,
+                        dailyCallMinutes: 0,
+                        dailyfacebookMessages: 0
+                    },
+                    referrals: {
+                        referralCode: '',
+                        referredCount: 0,
+                        stats: {
+                            totalReferrals: 0,
+                            successfulReferrals: 0,
+                            totalPointsEarned: 0
+                        },
+                        dynamic: {
+                            recentReferred: []
+                        }
+                    },
+                    points: {
+                        total: 0,
+                        available: 0,
+                        redeemed: 0,
+                        recentHistory: []
+                    }
+                })
             } finally {
                 setLoading(false)
             }
@@ -105,8 +157,55 @@ export default function QwesiPersonalDashboard() {
 
         if (userIdentifier) {
             fetchPersonalDashboard()
+        } else {
+            console.log('No user identifier available, using default dashboard data')
+            setLoading(false)
+            setDashboardData({
+                profile: {
+                    name: user?.name || 'User',
+                    userType: user?.userType || 'user',
+                    phone: user?.phone || '',
+                    email: user?.email || '',
+                    profileImage: '',
+                    country: '',
+                    website: '',
+                    profileCompleteness: 0,
+                    createdAt: user?.createdAt || null
+                },
+                flags: {},
+                activity: {
+                    conversationCount: 0,
+                    pitchCount: 0,
+                    lastConversationAt: null,
+                    lastPitchAt: null,
+                    last30DaysConversations: []
+                },
+                usage: {
+                    dailyMessages: 0,
+                    dailyCallMinutes: 0,
+                    dailyfacebookMessages: 0
+                },
+                referrals: {
+                    referralCode: '',
+                    referredCount: 0,
+                    stats: {
+                        totalReferrals: 0,
+                        successfulReferrals: 0,
+                        totalPointsEarned: 0
+                    },
+                    dynamic: {
+                        recentReferred: []
+                    }
+                },
+                points: {
+                    total: 0,
+                    available: 0,
+                    redeemed: 0,
+                    recentHistory: []
+                }
+            })
         }
-    }, [userIdentifier])
+    }, [userIdentifier, user])
 
     if (loading) return <Loading />
 
@@ -181,34 +280,34 @@ export default function QwesiPersonalDashboard() {
     const currentStreak = calculateStreak()
 
     const dashboardCardsData = [
-        { 
-            title: 'Total Conversations', 
-            value: dashboardData.activity.conversationCount, 
+        {
+            title: 'Total Conversations',
+            value: dashboardData.activity.conversationCount || 0,
             subtitle: `Last: ${dashboardData.activity.lastConversationAt ? new Date(dashboardData.activity.lastConversationAt).toLocaleDateString() : 'Never'}`,
             icon: MessageSquare,
             gradient: 'from-[#5C3AEB] to-[#342299]',
             bgGradient: 'from-[#5C3AEB]/10 to-[#342299]/10'
         },
-        { 
-            title: 'Current Streak', 
-            value: currentStreak, 
-            subtitle: `${currentStreak} consecutive days`,
+        {
+            title: 'Current Streak',
+            value: currentStreak || 0,
+            subtitle: `${currentStreak || 0} consecutive days`,
             icon: Flame,
             gradient: 'from-[#FF6B6B] to-[#EE5A24]',
             bgGradient: 'from-[#FF6B6B]/10 to-[#EE5A24]/10'
         },
-        { 
-            title: 'Total Points', 
-            value: dashboardData.points.total, 
-            subtitle: `${dashboardData.points.available} available`,
+        {
+            title: 'Total Points',
+            value: dashboardData.points.total || 0,
+            subtitle: `${dashboardData.points.available || 0} available`,
             icon: Award,
             gradient: 'from-[#FFD700] to-[#FFA500]',
             bgGradient: 'from-[#FFD700]/10 to-[#FFA500]/10'
         },
-        { 
-            title: 'Referrals Made', 
-            value: dashboardData.referrals.dynamic.referredCount, 
-            subtitle: `${dashboardData.referrals.stats.totalPointsEarned} points earned`,
+        {
+            title: 'Referrals Made',
+            value: dashboardData.referrals.dynamic.referredCount || 0,
+            subtitle: `${dashboardData.referrals.stats.totalPointsEarned || 0} points earned`,
             icon: Users,
             gradient: getUserTypeColor(dashboardData.profile.userType),
             bgGradient: `${getUserTypeColor(dashboardData.profile.userType).replace('from-', 'from-').replace('to-', 'to-')}/10`
@@ -244,14 +343,14 @@ export default function QwesiPersonalDashboard() {
                     
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                            Welcome back, {dashboardData.profile.name || 'User'}!
+                            Welcome back, {user?.name || 'User'}!
                         </h1>
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                             <span className="capitalize font-medium">
                                 {dashboardData.profile.userType} Account
                             </span>
                             <span>•</span>
-                            <span>Member since {new Date(dashboardData.profile.createdAt).toLocaleDateString()}</span>
+                            <span>Member since {dashboardData.profile.createdAt ? new Date(dashboardData.profile.createdAt).toLocaleDateString() : 'Unknown'}</span>
                             {dashboardData.referrals.referralCode && (
                                 <>
                                     <span>•</span>
@@ -314,7 +413,7 @@ export default function QwesiPersonalDashboard() {
                                     {card.title}
                                 </p>
                                 <p className="text-2xl sm:text-3xl font-black text-gray-900 truncate mb-1">
-                                    {card.value.toLocaleString ? card.value.toLocaleString() : card.value}
+                                    {typeof card.value === 'number' ? card.value.toLocaleString() : card.value}
                                 </p>
                                 <p className="text-xs text-gray-500">{card.subtitle}</p>
                             </div>
@@ -409,7 +508,7 @@ export default function QwesiPersonalDashboard() {
                                         <p className="font-medium text-gray-900 capitalize">{point.type}</p>
                                         <p className="text-sm text-gray-600">{point.description}</p>
                                         <p className="text-xs text-gray-500">
-                                            {new Date(point.timestamp).toLocaleDateString()}
+                                            {point.timestamp ? new Date(point.timestamp).toLocaleDateString() : 'Unknown'}
                                         </p>
                                     </div>
                                 </div>
@@ -437,7 +536,7 @@ export default function QwesiPersonalDashboard() {
                                 <p className="font-medium text-gray-900">{user.name || 'Anonymous'}</p>
                                 <p className="text-sm text-gray-600 capitalize">{user.userType}</p>
                                 <p className="text-xs text-gray-500">
-                                    Joined: {new Date(user.createdAt).toLocaleDateString()}
+                                    Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
                                 </p>
                             </div>
                         ))}

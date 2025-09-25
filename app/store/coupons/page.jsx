@@ -26,7 +26,8 @@ export default function AdminCoupons() {
             const response = await fetch(`${API_BASE_URL}/coupons`)
             if (response.ok) {
                 const data = await response.json()
-                setCoupons(data)
+                const couponsData = data.data || data
+                setCoupons(Array.isArray(couponsData) ? couponsData : [])
             } else {
                 throw new Error('Failed to fetch coupons')
             }

@@ -5,7 +5,6 @@ import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 import Navbar from "../Navbar"
 import SellerSidebar from "./StoreSidebar"
-import { dummyStoreData } from "@/assets/assets"
 import { readAuth, validateStoredToken } from "@/lib/auth"
 
 const StoreLayout = ({ children }) => {
@@ -22,7 +21,7 @@ const StoreLayout = ({ children }) => {
             const valid = await validateStoredToken()
             if (!valid.valid) { setIsSeller(false); setLoading(false); return }
             setIsSeller(true)
-            setStoreInfo(dummyStoreData)
+            setStoreInfo(null)
             setLoading(false)
         }
         init()

@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { X, Eye, EyeOff, ChevronDown } from 'lucide-react'
+import { useAuthStore } from '@/stores/authStore'
 import { loginWithCredentials, startGoogleOAuth, persistAuth } from '@/lib/auth'
 import { countryCodes, detectCountryByIP, formatPhoneNumber } from '@/utils/countryUtils'
 
@@ -12,6 +13,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onLoggedIn, onForgotPas
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [showCountryDropdown, setShowCountryDropdown] = useState(false)
+    const { setAuth } = useAuthStore()
 
     // Auto-detect country on component mount
     useEffect(() => {
@@ -42,6 +44,21 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onLoggedIn, onForgotPas
             document.body.style.overflow = 'unset'
         }
     }, [isOpen, onClose])
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const user = urlParams.get('user');
+        const token = urlParams.get('token');
+
+        if (user && token) {
+            const decodedUser = JSON.parse(decodeURIComponent(user));
+            persistAuth({ user: decodedUser, token });
+            setAuth(decodedUser, token);
+            onClose(); // Close the modal after successful login
+            // remove params from url
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, [isOpen]);
 
     const handleCountrySelect = (code) => {
         setCountryCode(code)
@@ -242,5 +259,3 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onLoggedIn, onForgotPas
 }
 
 export default LoginModal
-
-

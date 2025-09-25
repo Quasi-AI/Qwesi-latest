@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import Rating from "./Rating";
 import { useState } from "react";
 import RatingModal from "./RatingModal";
+import { format } from 'date-fns';
 
 const OrderItem = ({ order }) => {
 
@@ -23,7 +24,7 @@ const OrderItem = ({ order }) => {
                                 <div className="w-20 aspect-square bg-slate-100 flex items-center justify-center rounded-md">
                                     <Image
                                         className="h-14 w-auto"
-                                        src={item.product.images[0]}
+                                        src={item.product.images?.[0] || '/logo.png'}
                                         alt="product_img"
                                         width={50}
                                         height={50}
@@ -32,7 +33,7 @@ const OrderItem = ({ order }) => {
                                 <div className="flex flex-col justify-center text-sm">
                                     <p className="font-medium text-slate-600 text-base">{item.product.name}</p>
                                     <p>{currency}{item.price} Qty : {item.quantity} </p>
-                                    <p className="mb-1">{new Date(order.createdAt).toDateString()}</p>
+                                    <p className="mb-1">{order.createdAt ? format(new Date(order.createdAt), 'PP') : 'Unknown'}</p>
                                     <div>
                                         {ratings.find(rating => order.id === rating.orderId && item.product.id === rating.productId)
                                             ? <Rating value={ratings.find(rating => order.id === rating.orderId && item.product.id === rating.productId).rating} />
@@ -45,12 +46,12 @@ const OrderItem = ({ order }) => {
                     </div>
                 </td>
 
-                <td className="text-center max-md:hidden">{currency}{order.total}</td>
+                <td className="text-center max-md:hidden">{currency}{order.totalPrice}</td>
 
                 <td className="text-left max-md:hidden">
-                    <p>{order.address.name}, {order.address.street},</p>
-                    <p>{order.address.city}, {order.address.state}, {order.address.zip}, {order.address.country},</p>
-                    <p>{order.address.phone}</p>
+                    <p>{order.address?.name || 'N/A'}, {order.address?.street || ''},</p>
+                    <p>{order.address?.city || ''}, {order.address?.state || ''}, {order.address?.zip || ''}, {order.address?.country || ''},</p>
+                    <p>{order.address?.phone || 'N/A'}</p>
                 </td>
 
                 <td className="text-left space-y-2 text-sm max-md:hidden">
@@ -70,9 +71,9 @@ const OrderItem = ({ order }) => {
             {/* Mobile */}
             <tr className="md:hidden">
                 <td colSpan={5}>
-                    <p>{order.address.name}, {order.address.street}</p>
-                    <p>{order.address.city}, {order.address.state}, {order.address.zip}, {order.address.country}</p>
-                    <p>{order.address.phone}</p>
+                    <p>{order.address?.name || 'N/A'}, {order.address?.street || ''}</p>
+                    <p>{order.address?.city || ''}, {order.address?.state || ''}, {order.address?.zip || ''}, {order.address?.country || ''}</p>
+                    <p>{order.address?.phone || 'N/A'}</p>
                     <br />
                     <div className="flex items-center">
                         <span className='text-center mx-auto px-6 py-1.5 rounded bg-green-100 text-green-700' >

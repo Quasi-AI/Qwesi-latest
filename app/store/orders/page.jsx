@@ -15,8 +15,9 @@ export default function StoreOrders() {
         try {
             const response = await fetch(`${API_BASE_URL}/orders`)
             if (response.ok) {
-                const data = await response.json()
-                setOrders(data)
+                const result = await response.json()
+                const data = result.data || result
+                setOrders(Array.isArray(data) ? data : [])
             } else {
                 throw new Error('Failed to fetch orders')
             }

@@ -2,11 +2,11 @@
 import Loading from "@/components/Loading"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
-import { 
-    Plus, 
-    Search, 
-    Edit3, 
-    Eye, 
+import {
+    Plus,
+    Search,
+    Edit3,
+    Eye,
     Trash2,
     Package,
     ShoppingCart,
@@ -19,33 +19,54 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useAuthStore } from '@/stores/authStore'
+import { authFetch } from '@/lib/auth'
 
 const API_BASE_URL = 'https://dark-caldron-448714-u5.uc.r.appspot.com/api'
 
 export default function UserStores() {
+    const { user, initAuth } = useAuthStore()
     const [stores, setStores] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const [showCreateModal, setShowCreateModal] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [selectedStore, setSelectedStore] = useState(null)
-    const [userId, setUserId] = useState('user123') // Get from auth context
+    const userId = user?.id || user?._id || user?.userId || ''
 
     const fetchUserStores = async () => {
+        // Check if user is authenticated
+        if (!userId) {
+            setStores([])
+            setLoading(false)
+            return
+        }
+
         try {
-            const response = await fetch(`${API_BASE_URL}/stores?ownerId=${userId}`)
+            const response = await authFetch(`${API_BASE_URL}/stores?ownerId=${userId}`)
             if (response.ok) {
                 const data = await response.json()
+
+                // Ensure data is an array before mapping
+                const storesData = data.data || data;
+                if (!Array.isArray(storesData)) {
+                    console.warn('API returned non-array data:', data)
+                    setStores([])
+                    return
+                }
+
                 // Fetch product count for each store
                 const storesWithStats = await Promise.all(
-                    data.map(async (store) => {
+                    storesData.map(async (store) => {
                         try {
-                            const productsResponse = await fetch(`${API_BASE_URL}/stores/${store._id}/products`)
-                            const products = productsResponse.ok ? await productsResponse.json() : []
-                            
-                            const ordersResponse = await fetch(`${API_BASE_URL}/orders?storeId=${store._id}`)
-                            const orders = ordersResponse.ok ? await ordersResponse.json() : []
-                            
+                            const productsResponse = await authFetch(`${API_BASE_URL}/stores/${store._id}/products`)
+                            const productsData = productsResponse.ok ? await productsResponse.json() : []
+                            const products = Array.isArray(productsData) ? productsData : productsData.data || []
+
+                            const ordersResponse = await authFetch(`${API_BASE_URL}/orders?storeId=${store._id}`)
+                            const ordersData = ordersResponse.ok ? await ordersResponse.json() : []
+                            const orders = Array.isArray(ordersData) ? ordersData : ordersData.data || []
+
                             return {
                                 ...store,
                                 productCount: products.length,
@@ -53,6 +74,7 @@ export default function UserStores() {
                                 totalRevenue: orders.reduce((sum, order) => sum + (order.total || 0), 0)
                             }
                         } catch (error) {
+                            console.error('Error fetching stats for store:', store._id, error)
                             return {
                                 ...store,
                                 productCount: 0,
@@ -64,11 +86,14 @@ export default function UserStores() {
                 )
                 setStores(storesWithStats)
             } else {
-                throw new Error('Failed to fetch stores')
+                const errorText = await response.text()
+                console.error('API error response:', response.status, errorText)
+                throw new Error(`Failed to fetch stores: ${response.status}`)
             }
         } catch (error) {
             console.error('Error fetching stores:', error)
             toast.error('Failed to fetch your stores')
+            setStores([]) // Set empty array on error
         } finally {
             setLoading(false)
         }
@@ -76,7 +101,7 @@ export default function UserStores() {
 
     const createStore = async (storeData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/stores`, {
+            const response = await authFetch(`${API_BASE_URL}/stores`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +129,7 @@ export default function UserStores() {
 
     const updateStore = async (storeId, storeData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/stores/${storeId}`, {
+            const response = await authFetch(`${API_BASE_URL}/stores/${storeId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -114,7 +139,7 @@ export default function UserStores() {
 
             if (response.ok) {
                 const updatedStore = await response.json()
-                setStores(stores.map(store => 
+                setStores(stores.map(store =>
                     store._id === storeId ? { ...updatedStore, ...store } : store
                 ))
                 setShowEditModal(false)
@@ -135,7 +160,7 @@ export default function UserStores() {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/stores/${storeId}`, {
+            const response = await authFetch(`${API_BASE_URL}/stores/${storeId}`, {
                 method: 'DELETE',
             })
 
@@ -156,7 +181,7 @@ export default function UserStores() {
         if (!store) return
 
         try {
-            const response = await fetch(`${API_BASE_URL}/stores/${storeId}`, {
+            const response = await authFetch(`${API_BASE_URL}/stores/${storeId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -168,7 +193,7 @@ export default function UserStores() {
 
             if (response.ok) {
                 const updatedStore = await response.json()
-                setStores(stores.map(s => 
+                setStores(stores.map(s =>
                     s._id === storeId ? { ...s, isActive: updatedStore.isActive } : s
                 ))
                 toast.success(`Store ${updatedStore.isActive ? 'activated' : 'deactivated'} successfully!`)
@@ -182,8 +207,8 @@ export default function UserStores() {
     }
 
     const filteredStores = stores.filter(store =>
-        store.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        store.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (store.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (store.description?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     )
 
     const getTotalStats = () => {
@@ -195,6 +220,10 @@ export default function UserStores() {
             activeStores: stores.filter(store => store.isActive).length
         }
     }
+
+    useEffect(() => {
+        initAuth()
+    }, [])
 
     useEffect(() => {
         fetchUserStores()
@@ -300,7 +329,11 @@ export default function UserStores() {
             {filteredStores.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {filteredStores.map((store) => (
-                        <div key={store._id} className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                        <Link
+                            key={store._id}
+                            href={`/store/${store._id}`}
+                            className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow block"
+                        >
                             <div className="p-6">
                                 {/* Store Header */}
                                 <div className="flex items-start justify-between mb-4">
@@ -386,7 +419,7 @@ export default function UserStores() {
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             ) : (

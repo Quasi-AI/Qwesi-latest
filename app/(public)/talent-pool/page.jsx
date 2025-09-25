@@ -349,7 +349,7 @@ const TalentPool = () => {
     } catch {}
 
     if (!talent?.contactAvailable) {
-      alert('Contact information is not available for this talent.')
+      toast.error('Contact information is not available for this talent.')
       return
     }
     
@@ -404,7 +404,7 @@ const TalentPool = () => {
     } catch {}
 
     if (!talent?.contactAvailable) {
-      alert('This talent is not available for chat.')
+      toast.error('This talent is not available for chat.')
       return
     }
     

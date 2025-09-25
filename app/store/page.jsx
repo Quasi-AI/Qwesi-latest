@@ -4,12 +4,15 @@ import { CircleDollarSignIcon, ShoppingBasketIcon, StarIcon, TagsIcon } from "lu
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useAuthStore } from '@/stores/authStore'
+import { authFetch } from '@/lib/auth'
 
 const API_BASE_URL = 'https://dark-caldron-448714-u5.uc.r.appspot.com/api'
 
 export default function Dashboard() {
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
     const router = useRouter()
+    const { user } = useAuthStore()
 
     const [loading, setLoading] = useState(true)
     const [dashboardData, setDashboardData] = useState({
@@ -28,27 +31,44 @@ export default function Dashboard() {
     ]
 
     const fetchDashboardData = async () => {
+        if (!user?.id) {
+            setLoading(false)
+            return
+        }
+
         try {
-            // Fetch stores
-            const storesResponse = await fetch(`${API_BASE_URL}/stores`)
-            const storesData = await storesResponse.json()
-            
-            // Fetch orders
-            const ordersResponse = await fetch(`${API_BASE_URL}/orders`)
-            const ordersData = await ordersResponse.json()
+            // Fetch user's stores
+            const storesResponse = await authFetch(`${API_BASE_URL}/stores?userId=${user.id}`)
+            const storesResult = await storesResponse.json()
+            let storesData = storesResult.data || storesResult
+            if (!Array.isArray(storesData)) {
+                storesData = []
+            }
+
+            // Fetch user's orders
+            const ordersResponse = await authFetch(`${API_BASE_URL}/orders?userId=${user.id}`)
+            const ordersResult = await ordersResponse.json()
+            let ordersData = ordersResult.data || ordersResult
+            if (!Array.isArray(ordersData)) {
+                ordersData = []
+            }
 
             // Calculate totals
             let totalProducts = 0
             let totalEarnings = 0
 
-            // Count products from all stores
+            // Count products from user's stores
             for (const store of storesData) {
-                const productsResponse = await fetch(`${API_BASE_URL}/stores/${store._id}/products`)
-                const productsData = await productsResponse.json()
+                const productsResponse = await authFetch(`${API_BASE_URL}/stores/${store._id}/products`)
+                const productsResult = await productsResponse.json()
+                let productsData = productsResult.data || productsResult
+                if (!Array.isArray(productsData)) {
+                    productsData = []
+                }
                 totalProducts += productsData.length
             }
 
-            // Calculate earnings from orders
+            // Calculate earnings from user's orders
             totalEarnings = ordersData.reduce((sum, order) => sum + (order.total || 0), 0)
 
             setDashboardData({
@@ -67,7 +87,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchDashboardData()
-    }, [])
+    }, [user?.id])
 
     if (loading) return <Loading />
 
