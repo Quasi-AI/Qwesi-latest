@@ -141,11 +141,6 @@ function ShopContent() {
 
     // Filter and sort products locally for additional client-side filtering
     const processedProducts = products
-        .filter(product => {
-            // Additional client-side filters
-            if (subcategory && product.subcategory !== subcategory) return false
-            return true
-        })
         .sort((a, b) => {
             switch (localFilters.sortBy) {
                 case 'price-low':

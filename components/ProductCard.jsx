@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react'
 
 const API_BASE_URL = 'https://dark-caldron-448714-u5.uc.r.appspot.com/api'
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, disabled }) => {
     const [isWishlisted, setIsWishlisted] = useState(false)
     const [storeInfo, setStoreInfo] = useState(null)
     const [loadingStore, setLoadingStore] = useState(false)
@@ -91,11 +91,11 @@ const ProductCard = ({ product }) => {
 
     return (
         <div className='w-full'>
-            <div className='bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-[#5C3AEB] transition-colors group'>
+            <div className={`bg-white border border-gray-200 rounded-lg overflow-hidden ${!disabled && 'hover:border-[#5C3AEB]'} transition-colors ${disabled ? 'opacity-50 grayscale' : ''}`}>
                 
                 {/* Image Container */}
                 <div className='relative h-40 bg-gray-50 flex items-center justify-center overflow-hidden'>
-                    <Link href={`/product/${product.id || product._id}`} className="flex items-center justify-center w-full h-full">
+                    <Link href={`/product/${product.id}`} className={`flex items-center justify-center w-full h-full ${disabled ? 'pointer-events-none' : ''}`}>
                         <Image 
                             width={300} 
                             height={300} 
@@ -109,28 +109,22 @@ const ProductCard = ({ product }) => {
                     </Link>
                     
                     {/* Sale Badge */}
-                    {isOnSale && (
+                    {!disabled && isOnSale && (
                         <div className='absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded'>
                             SALE
                         </div>
                     )}
 
-                    {/* Stock Badge */}
-                    {product.stock === 0 && (
-                        <div className='absolute top-2 left-2 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded'>
-                            OUT OF STOCK
-                        </div>
-                    )}
-                    
                     {/* Wishlist Button */}
                     <div className='absolute top-2 right-2'>
                         <button
                             onClick={handleWishlistClick}
+                            disabled={disabled}
                             className={`w-7 h-7 rounded-full flex items-center justify-center ${
                                 isWishlisted 
                                     ? 'bg-red-500 text-white' 
                                     : 'bg-white text-gray-600 hover:bg-red-500 hover:text-white'
-                            } transition-colors shadow-sm`}
+                            } transition-colors ${disabled ? 'cursor-not-allowed' : ''}`}
                         >
                             <HeartIcon size={14} fill={isWishlisted ? 'currentColor' : 'none'} />
                         </button>
@@ -139,8 +133,8 @@ const ProductCard = ({ product }) => {
 
                 {/* Product Info */}
                 <div className='p-3'>
-                    <Link href={`/product/${product.id || product._id}`}>
-                        <h3 className='font-medium text-gray-900 text-sm line-clamp-2 leading-tight mb-1 hover:text-[#5C3AEB] transition-colors'>
+                    <Link href={`/product/${product.id}`} className={`${disabled ? 'pointer-events-none' : ''}`}>
+                        <h3 className='font-medium text-gray-900 text-sm line-clamp-2 leading-tight mb-1'>
                             {product.name}
                         </h3>
                     </Link>
@@ -165,32 +159,33 @@ const ProductCard = ({ product }) => {
                         <span className='text-xs text-gray-500'>
                             ({product.rating?.length || 0})
                         </span>
-                        {rating > 0 && (
-                            <span className='text-xs text-gray-500 ml-1'>
-                                {(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length).toFixed(1)}
-                            </span>
-                        )}
                     </div>
                     
                     {/* Price */}
-                    <div className='flex items-center justify-between mb-2'>
-                        <div className='flex items-center gap-1'>
-                            <span className='text-base font-bold text-[#5C3AEB]'>
-                                {currency}{product.price?.toFixed(2) || '0.00'}
-                            </span>
-                            {isOnSale && originalPrice !== product.price && (
-                                <span className='text-xs text-gray-500 line-through'>
-                                    {currency}{originalPrice.toFixed(2)}
+                    {disabled ? (
+                        <div className='flex items-center justify-center bg-gray-100 p-2 rounded-md mb-2'>
+                            <p className="text-sm font-medium text-gray-700">Contact owner for price</p>
+                        </div>
+                    ) : (
+                        <div className='flex items-center justify-between mb-2'>
+                            <div className='flex items-center gap-1'>
+                                <span className='text-base font-bold text-[#5C3AEB]'>
+                                    {currency}{product.price?.toFixed(2) || '0.00'}
+                                </span>
+                                {isOnSale && (
+                                    <span className='text-xs text-gray-500 line-through'>
+                                        {currency}{originalPrice.toFixed(2)}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            {isOnSale && (
+                                <span className='text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-medium'>
+                                    {Math.round(((originalPrice - product.price) / originalPrice) * 100)}% OFF
                                 </span>
                             )}
                         </div>
-                        
-                        {isOnSale && (
-                            <span className='text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded font-medium'>
-                                {Math.round(((originalPrice - product.price) / originalPrice) * 100)}% OFF
-                            </span>
-                        )}
-                    </div>
+                    )}
                     
                     {/* Stock Status */}
                     <div className='mb-3'>
@@ -223,7 +218,7 @@ const ProductCard = ({ product }) => {
                             <button
                                 onClick={handleWhatsAppContact}
                                 disabled={loadingStore || !storeInfo?.contact}
-                                className='flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium py-2 rounded flex items-center justify-center gap-1 transition-colors'
+                                className='flex-1 bg-green-500 hover:bg-green-600 text-white text-xs font-medium py-2 rounded flex items-center justify-center gap-1 transition-colors'
                             >
                                 <MessageCircleIcon size={12} />
                                 WhatsApp
@@ -231,7 +226,7 @@ const ProductCard = ({ product }) => {
                             <button
                                 onClick={handlePhoneContact}
                                 disabled={loadingStore || !storeInfo?.contact}
-                                className='flex-1 bg-[#5C3AEB] hover:bg-[#3525b8] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-medium py-2 rounded flex items-center justify-center gap-1 transition-colors'
+                                className='flex-1 bg-[#5C3AEB] hover:bg-[#3525b8] text-white text-xs font-medium py-2 rounded flex items-center justify-center gap-1 transition-colors'
                             >
                                 <PhoneIcon size={12} />
                                 Call

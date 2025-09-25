@@ -471,7 +471,8 @@ const CreateStoreModal = ({ onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        address: ''
+        address: '',
+        contact: ''
     })
     const [loading, setLoading] = useState(false)
 
@@ -529,6 +530,18 @@ const CreateStoreModal = ({ onClose, onSubmit }) => {
                             disabled={loading}
                         />
                     </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Contact Phone</label>
+                        <input
+                            type="tel"
+                            value={formData.contact}
+                            onChange={(e) => setFormData({...formData, contact: e.target.value})}
+                            placeholder="e.g. +1234567890"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            disabled={loading}
+                        />
+                    </div>
                     
                     <div className="flex justify-end gap-3 pt-4">
                         <button
@@ -558,7 +571,8 @@ const EditStoreModal = ({ store, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         name: store?.name || '',
         description: store?.description || '',
-        address: store?.address || ''
+        address: store?.address || '',
+        contact: store?.contact || ''
     })
     const [loading, setLoading] = useState(false)
 
@@ -618,7 +632,19 @@ const EditStoreModal = ({ store, onClose, onSubmit }) => {
                             disabled={loading}
                         />
                     </div>
-                    
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Contact Phone</label>
+                        <input
+                            type="tel"
+                            value={formData.contact}
+                            onChange={(e) => setFormData({...formData, contact: e.target.value})}
+                            placeholder="e.g. +1234567890"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            disabled={loading}
+                        />
+                    </div>
+
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="button"
